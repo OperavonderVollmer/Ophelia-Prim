@@ -26,7 +26,7 @@ def opheliaListen(duration):
                 print(f"Detected Input: {text}")
                 text = text.lower()
                 if text.__contains__("ophelia") or text.__contains__("command"):
-                    opheliaSpeak(recognizeCommand(text))                
+                    opheliaSpeak(recognizeCommand(text))
                 opheliaListen(0)
                 return text
 def recognizeCommand(command):
@@ -36,7 +36,7 @@ def recognizeCommand(command):
                 if keyword in command:
                     print(f"Command Recognized: {str(keyword)}")
                     opheliaSpeak(f"Command Recognized")
-                    return response() if callable(response) else response
+                    return (response() if callable(response) else response)
         except Exception as e:
             print(e)
             return(f"Command cannot be executed")
@@ -47,8 +47,8 @@ def opheliaSpeak(text):
     opheNeu.engine.runAndWait()
 def opheliaStop():
     opheNeu.opheliaRequired = False
-    opheliaSpeak("Ophelia has been instructed to stop, Ophelia wishes you an excellent day")
-    opheNeu.engine.stop()
+    opheNeu.engine.stop()    
+    return("Ophelia has been instructed to stop, Ophelia wishes you an excellent day")
 #--------------------------------------------------------#
 commandMap = {
     "stat": opheAux.getCPUStats,
@@ -57,24 +57,17 @@ commandMap = {
     }
 #--------------------------------------------------------#
 def onStart():
-    if ctypes.windll.shell32.IsUserAnAdmin():
-        # Already running as admin, proceed with the operation
-        opheliaSpeak(f"Welcome, Master. Ophelia has been humbly waiting for you")
-    else:
+    if not ctypes.windll.shell32.IsUserAnAdmin():
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         print(f"Requested elevation: {sys.executable} {sys.argv[0]}")
         sys.exit(0)
 #--------------------------------------------------------#
-def opheliaBegin ():
+def opheliaBegin():
+    opheliaSpeak(f"Welcome, Master. Ophelia has been humbly waiting for you")
     with sr.Microphone() as source:
         opheNeu.recognizer.adjust_for_ambient_noise(source)
         print(f"Adjusted energy threshold: {opheNeu.recognizer.energy_threshold}")
-    opheliaSpeak(opheliaListen(0))
+    opheliaListen(0)
+
+onStart()
 opheliaBegin()
-try:
-    opheAux.getCPUStats()
-except Exception as e:
-    print(e)
-
-
-input("Press Enter to continue...")
