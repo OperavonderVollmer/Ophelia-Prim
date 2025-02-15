@@ -1,75 +1,94 @@
-import pyttsx3
-import speech_recognition as sr
-import opheliaAuxilliary as oa
+import opheliaNeurals as opheNeu
+
+def opheliaConversation(text):  
+    cancelRecognizer = opheNeu.sr.Recognizer()
+    cancelRecognizer.energy_threshold = opheNeu.recognizer.energy_threshold
+    mic = opheNeu.sr.Microphone(device_index=1)
+    def callback(recognizer, audio):        
+        print("[DEBUG] Callback Active")
+        try:
+            heard=""            
+            heard = recognizer.recognize_google(audio)
+            if heard.__contains__("cancel"):
+                print("CancelMentioned")
+                opheliaCancelCommand()
+        except Exception: pass
+
+    def opheliaInterrupt():
+        opheNeu.opheliaInterrupted = False        
+        print("\nOphelia Speaking...")
+        print(opheNeu.opheliaInterrupted)
+        stopListening = cancelRecognizer.listen_in_background(mic, callback)
+        print(opheNeu.opheliaInterrupted)
+        print("[DEBUG] Listening started")
+        while not opheNeu.opheliaInterrupted:
+            opheNeu.time.sleep(0.25)
+            print("----Listening...")
+            print(opheNeu.opheliaInterrupted)
+        print("[DEBUG] Stopping listening")
+        print(opheNeu.opheliaInterrupted)
+        if opheNeu.opheliaInterrupted:
+            stopListening(wait_for_stop=False)
+        print("Killing Thread")
+
+    cancelThread = opheNeu.thr.Thread(target=opheliaInterrupt)
+    cancelThread.start()
+    opheliaSpeak(text)
+    
+    opheNeu.opheliaInterrupted = True
+    cancelThread.join()
+
+def opheliaSpeak(text):
+    opheNeu.engine.say(text=text)
+    opheNeu.engine.runAndWait()
 
 
-def opheliaBegin ():
-    with sr.Microphone() as source:
-        recognizer.adjust_for_ambient_noise(source)
-        print(f"Adjusted energy threshold: {recognizer.energy_threshold}")
-    #opheliaListen(0, opheliaRequired)
+def opheliaListen (duration, commandMap):
+    while opheNeu.opheliaRequired:
+        opheliaHeard = opheliaHears(duration)
+        if opheliaHeard != "":
+            print(f"Detected Input: {opheliaHeard}")
+            if opheliaHeard.__contains__("ophelia") or opheliaHeard.__contains__("command"):
+                opheliaObey(opheliaHeard,commandMap)
+            else:
+                print("Rambling...")        
 
+def opheliaHears(duration, currRecognizer=opheNeu.recognizer): 
+    with opheNeu.sr.Microphone(device_index=1) as source:
+        audio = currRecognizer.listen(source, timeout=None if duration <= 0 else duration)
+        opheliaHeard = ""
+        try:
+            opheliaHeard = currRecognizer.recognize_google(audio)
+            return opheliaHeard
+        except opheNeu.sr.RequestError:
+            try:
+                opheliaHeard = currRecognizer.recognize_sphinx(audio)
+                return opheliaHeard
+            except opheNeu.sr.UnknownValueError:
+                opheliaHeard = ""
+            except opheNeu.sr.RequestError as e:
+                opheliaSpeak(f"PocketSphinx error; {e}")     
+        except opheNeu.sr.UnknownValueError:
+            opheliaHeard = ""
+        finally: return opheliaHeard   
+            
+def opheliaCareKit():
+    return "Command Recognized: Unfortunately, this feature hasn't been implemented yet"
 
-def opheliaStop():
-    global opheliaRequired
-    opheliaRequired = False
-    command = "Command recognized: Ophelia has been instructed to stop, Ophelia wishes you an excellent day"
-    return command
-
-def opheliaSpeak(text):    
-    engine.say(text=text)
-    engine.runAndWait()
-
-def opheliaListen(duration, opheliaRequired):  
-    try:  
-        if opheliaRequired:
-            print("Awaiting Input...")
-            with sr.Microphone() as source:
-                if duration < 1:
-                    audio = recognizer.listen(source)
-                else:
-                    audio = recognizer.listen(source, timeout=duration)
-                text = ""
-
-                try:
-                    text = recognizer.recognize_google(audio)
-                except sr.RequestError:
-                    try:
-                        text = recognizer.recognize_sphinx(audio)
-                    except sr.UnknownValueError:
-                        text = ("Sorry, Ophelia could not understand the audio.")
-                    except sr.RequestError as e:
-                        text = (f"PocketSphinx error; {e}")
-                finally:
-                    print(f"Detected Input: {text}")
-                    text = text.lower()
-                    if text.__contains__("ophelia") or text.__contains__("command"):
-                        opheliaSpeak(recognizeCommand(text))                    
-                        opheliaListen(0, opheliaRequired)
-                    else:
-                        opheliaListen(0, opheliaRequired)
-    except Exception as e:
-        print(e)
-        opheliaListen(0, opheliaRequired)
-def recognizeCommand(command):
+def opheliaObey(command, commandMap):
     if command.__contains__("command"):
         try:
             for keyword, response in commandMap.items():
                 if keyword in command:
-                    print(f"Command Recognized: {str(keyword)}")
-                    opheliaSpeak(response() if callable(response) else response)
+                    print(f"Command Recognized: {str(keyword)}")    
+                    opheliaSpeak(f"{response() if callable(response) else response}")
         except Exception as e:
             print(e)
             return(f"Command cannot be executed")
-    else:
-        oa.opheliaCareKit()
-
-commandMap = {
-    "stat": oa.getCPUStats,
-    "balls": lambda: "Command Recognized: Now crushing his balls",
-    "stop": opheliaStop,
-    }
-recognizer = sr.Recognizer()
-engine = pyttsx3.init('sapi5')
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
+    elif command.__contains__("ophelia"):
+        opheliaSpeak(opheliaCareKit())
+    
+def opheliaCancelCommand():
+    print("Cancelling command")
+    opheNeu.opheliaInterrupted=True
+    opheNeu.engine.stop()

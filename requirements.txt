@@ -1,13 +1,15 @@
-dependencies:
-
 pyttsx3
 pyaudio
 torch
 torchaudio
 TTS
-simpleaudio -note needed
 gradio
 SpeechRecognition
 psutil
 pystray
 pillow
+wmi
+requests
+wikipedia-api
+wikipedia
+sumy
