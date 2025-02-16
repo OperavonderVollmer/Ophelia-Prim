@@ -1,7 +1,7 @@
 import opheliaNeurals as opheNeu
-import opheliaAuxilliary as opheAux
 
-def getWikipediaSummary(topic, sentences=4):
+def getWikipediaSummary(t, sentences=4):
+    topic = t
     wiki = opheNeu.wikipediaapi.Wikipedia(user_agent="Opera operavgxgamer@gmail.com", language="en")  # English Wikipedia API
 
     def summarize(text, sentences):
@@ -37,7 +37,6 @@ def getWikipediaSummary(topic, sentences=4):
 def getWeather(showLogs="True", city="Taguig"):
     url = f"https://wttr.in/{city}?format=j1"
     response = opheNeu.requests.get(url)
-    
     if response.status_code == 200:
         data = response.json()
         current_time = opheNeu.datetime.now().hour * 100  # Get current hour in 24-hour format (e.g., 3 AM -> 300)
@@ -46,7 +45,6 @@ def getWeather(showLogs="True", city="Taguig"):
         upcoming_forecast = [
             hour for hour in forecast if int(hour["time"]) >= current_time
         ][:noOfForecasts]  # Get the next 12 hours (4 forecasts, as data is in 3-hour intervals)
-        
         forecast_strings = []
         for hour in upcoming_forecast:
             time_str = f"{int(hour['time']) // 100}:00"  # Convert 2400 format to readable format
@@ -57,9 +55,8 @@ def getWeather(showLogs="True", city="Taguig"):
         output = f"The day is currently {current_date}. This is the weather forecast for {city} for the next 12 hours:\n" + "\n".join(forecast_strings) +"\nThis concludes the weather forecast."
         if showLogs: print(output) 
         return output
-    else:
-        return "Unfortunately, Could not fetch weather data."
-def getCPUStats():    
+    else: return "Unfortunately, Could not fetch weather data."
+def getCPUStats(t):    
     cpu_usage = opheNeu.psutil.cpu_percent(interval=1)
     ram = opheNeu.psutil.virtual_memory()
     ram_available = (f"{ram.available / (1024 ** 3):.2f} GB")
@@ -71,21 +68,58 @@ def getCPUStats():
     text = (f"CPU Usage: {cpu_usage}%\nRAM Usage: {ram_usage}\nRAM Available: {ram_available}\nCPU Temperature: {cpu_temp}")
     print(text)
     return text
-def opheliaSleep():
+def opheliaSleep(t):
     opheNeu.opheliaRequired = False
     return("Farewell, Master. Ophelia wishes you an excellent day")
-def greeting():
+def greeting(t):
     greetings = ["Hello", "Hi", "Greetings"]
     return opheNeu.random.choice(greetings)
-def openApp(target):
-    with opheNeu.os as os:
-        root_dir = os.path.dirname(os.path.abspath(__file__)) 
-        shortcutPath = os.path.join(root_dir, "shortcuts", target)  
-        shortcutPath += ".lnk"
-        if os.path.exists(shortcutPath): 
+def openApp(t):
+    target = t
+    root_dir = opheNeu.os.path.dirname(opheNeu.os.path.abspath(__file__)) 
+    shortcutDir = opheNeu.os.path.join(root_dir, "assets/shortcuts")  
+    shortcutPath = opheNeu.os.path.join(shortcutDir, target)
+    shortcutPath += ".lnk"
+    for app in opheNeu.os.listdir(shortcutDir):
+        if app.lower() == target+".lnk":
             try:
-                os.startfile(shortcutPath)  
+                opheNeu.os.system(shortcutPath)  
                 return(f"Opening {target}...")
             except Exception as e: print(f"An error occurred: {str(e)}")
-        else:
-            return(f"Shortcut '{target}' not found.")
+    else:
+        return(f"Shortcut '{target}' not found. Is the {target} shortcut in shortcuts folder?")   
+def playAudio(audio, sample_rate, device):
+    opheNeu.sd.play(audio, samplerate=sample_rate, device=device)
+    opheNeu.sd.wait() 
+def audioThroughMic(text, isTTS=True, mic_index=opheNeu.micIndex, speaker_index=opheNeu.speakerIndex):
+    if isTTS:
+        with opheNeu.tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_wav:
+            fileName = temp_wav.name
+        opheNeu.engine.save_to_file(text, fileName)
+        opheNeu.engine.runAndWait() 
+    else:
+        target = text.replace(" ", "")
+        root_dir = opheNeu.os.path.dirname(opheNeu.os.path.abspath(__file__)) 
+        audioDir = opheNeu.os.path.join(root_dir, "assets/sound_bites")  
+        audioPath = opheNeu.os.path.join(audioDir, target)
+        fileName = audioPath + ".wav"
+    with opheNeu.wave.open(fileName, 'rb') as wav_file:
+            sample_rate = wav_file.getframerate()
+            audio_data = opheNeu.np.frombuffer(wav_file.readframes(wav_file.getnframes()), dtype=opheNeu.np.int16)
+    if not isTTS: 
+        audio = opheNeu.AudioSegment.from_file(fileName)
+        bitrate = (audio.frame_rate * audio.frame_width * 8)
+        bitrate_kbps = bitrate / 1000 
+        #sample_rate = (bitrate_kbps * 96000) / 1536   # will change if it becomes a problem   
+        sample_rate = (96000)                          # will change if it becomes a problem   
+    #else: opheNeu.os.remove(fileName)     
+    mic_thread = opheNeu.thr.Thread(target=playAudio, args=(audio_data, sample_rate, mic_index))
+    speaker_thread = opheNeu.thr.Thread(target=playAudio, args=(audio_data, sample_rate, speaker_index))
+    mic_thread.start()
+    speaker_thread.start()
+    mic_thread.join()
+    speaker_thread.join()
+    return ""
+ 
+
+

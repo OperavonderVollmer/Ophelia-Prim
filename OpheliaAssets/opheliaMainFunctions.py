@@ -71,7 +71,7 @@ def opheliaHears(duration, currRecognizer=opheNeu.recognizer):
         except opheNeu.sr.UnknownValueError:
             opheliaHeard = ""
         finally: return opheliaHeard   
-            
+
 def opheliaCareKit():
     return "Command Recognized: Unfortunately, this feature hasn't been implemented yet"
 
@@ -81,7 +81,7 @@ def opheliaObey(command, commandMap):
             for keyword, response in commandMap.items():
                 if keyword in command:
                     print(f"Command Recognized: {str(keyword)}")    
-                    opheliaSpeak(f"{response() if callable(response) else response}")
+                    opheliaSpeak(f"{response(keyword) if callable(response) else response}")
         except Exception as e:
             print(e)
             return(f"Command cannot be executed")

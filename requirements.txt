@@ -1,3 +1,4 @@
+#vbcable not a python library
 pyttsx3
 pyaudio
 torch
@@ -13,3 +14,9 @@ requests
 wikipedia-api
 wikipedia
 sumy
+sounddevice
+librosa # maybe not
+scipy
+vosk # no need
+pystray
+pillow
