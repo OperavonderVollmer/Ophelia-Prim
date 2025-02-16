@@ -6,7 +6,7 @@ import opheliaNeurals as opheNe
 
 #--------------------------------------------------------#
 
-opheWake.opheliaBegin(False)
+opheWake.opheliaBegin(not opheNe.debugMode)
 #opheWake.opheliaBegin(True, opheAux.commandMap)
 
 #--------------------------------------------------------#

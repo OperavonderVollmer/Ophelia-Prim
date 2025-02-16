@@ -26,18 +26,18 @@ from pydub import AudioSegment
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.luhn import LuhnSummarizer
+import config
 
-micIndex = 10
-speakerIndex = 17 
+micIndex = config.micIndex
+speakerIndex = config.speakerIndex
 opheliaRequired = True
 opheliaInterrupted = False
 recognizer = sr.Recognizer()
 mic = sr.Microphone()
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
+engine.setProperty('voice', voices[1].id) 
 computer = wmi.WMI(namespace="root\\wmi")
-debugMode = False
-
+debugMode = config.debugMode 
 def debug_log(message): 
     if debugMode: print(f"[DEBUG] {message}")
