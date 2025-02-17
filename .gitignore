@@ -1,3 +1,10 @@
 *.lnk
 *.wav
 /OpheliaAssets/Unused
+OpheliaAssets/testingScripts/token.json
+OpheliaAssets/googleAPI.json
+OpheliaAssets/assets/rock
+/OpheliaAssets/__pycache__
+/OpheliaAssets/__pycache__
+/OpheliaAssets/__pycache__
+OpheliaAssets/testingScripts/testGoogleMail(T).py

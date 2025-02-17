@@ -15,8 +15,12 @@ wikipedia-api
 wikipedia
 sumy
 sounddevice
-librosa # maybe not
+#librosa not
 scipy
-vosk # no need
+#vosk no need
 pystray
 pillow
+word2number
+google-api-python-client 
+google-auth-httplib2 
+google-auth-oauthlib

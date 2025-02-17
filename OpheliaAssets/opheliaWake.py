@@ -1,7 +1,8 @@
 import opheliaNeurals as opheNeu
-import opheliaMainFunctions as opheMf
 import opheliaAuxilliary as opheAux
 import opheliaBridge as opheBri
+import opheliaTrayIcon as opheIcon
+from functions import opheliaMouth, opheliaEars
 
 def onStart():
     if not opheNeu.ctypes.windll.shell32.IsUserAnAdmin():
@@ -9,20 +10,22 @@ def onStart():
         print(f"Requested elevation: {opheNeu.sys.executable} {opheNeu.sys.argv[0]}")
         opheNeu.sys.exit(0)
 
-def opheliaBegin(onStartBool):
+def opheliaBegin(onStartBool, quickstart=False):
     print("Ophelia Prime Booting...")
     if onStartBool: 
         onStart()
-    opheMf.opheliaSpeak(f"Welcome, Master. Ophelia has been humbly waiting for you.")
-    with opheNeu.sr.Microphone(device_index=1) as source:
-        opheNeu.recognizer.adjust_for_ambient_noise(source)
-        opheNeu.recognizer.energy_threshold *= 0.75
-        print(f"Adjusted energy threshold: {opheNeu.recognizer.energy_threshold}")
-    weatherReport = opheAux.getWeather(False)
-    try:        
-        opheMf.opheliaSpeak(f"Would you like to hear today's weather report?")
-        if opheMf.opheliaHears(6).__contains__("yes"): print("Getting Weather Report..."); opheMf.opheliaSpeak(weatherReport)
-        else: print("Weather report rejected..."); pass
-    except: pass
-    opheMf.opheliaSpeak("How may Ophelia assist you today?")
-    opheBri.opheliaStartMainLoop()
+    if not quickstart:
+        opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("greetings"))
+        with opheNeu.sr.Microphone(device_index=1) as source:
+            opheNeu.recognizer.adjust_for_ambient_noise(source)
+            opheNeu.recognizer.energy_threshold *= 0.75
+            print(f"Adjusted energy threshold: {opheNeu.recognizer.energy_threshold}")
+        weatherReport = opheAux.getWeather(False)
+        try:        
+            opheliaMouth.opheliaSpeak(f"Would you like to hear today's weather report?")
+            if opheliaEars.opheliaHears(6).__contains__("yes"): print("Getting Weather Report..."); opheliaMouth.opheliaSpeak(weatherReport)
+            else: print("Weather report rejected..."); pass
+        except: pass
+    opheAux.postureCheckWrapped()
+    opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("ready"))
+    opheBri.opheliaStartMainLoop(opheIcon)

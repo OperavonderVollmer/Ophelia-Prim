@@ -13,9 +13,7 @@ def getWikipediaSummary(t, sentences=4):
     try:
         # Try getting the page directly
         page = wiki.page(topic)
-        if page.exists():
-            return summarize(page.summary, sentences)
-        
+        if page.exists(): return summarize(page.summary, sentences)
         # If page doesn't exist, fall back to search results
         search_results = opheNeu.wikipedia.search(topic)
         if search_results:
@@ -34,7 +32,7 @@ def getWikipediaSummary(t, sentences=4):
         return "I couldn't find anything on Wikipedia about that topic."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-def getWeather(showLogs="True", city="Taguig"):
+def getWeather(showLogs="True", city=opheNeu.city):
     url = f"https://wttr.in/{city}?format=j1"
     response = opheNeu.requests.get(url)
     if response.status_code == 200:
@@ -68,12 +66,10 @@ def getCPUStats(t):
     text = (f"CPU Usage: {cpu_usage}%\nRAM Usage: {ram_usage}\nRAM Available: {ram_available}\nCPU Temperature: {cpu_temp}")
     print(text)
     return text
-def opheliaSleep(t):
+def opheliaSleep(t):    
+    audioThroughMic(opheNeu.getRandomDialogue("farewells"), True, False)
     opheNeu.opheliaRequired = False
-    return("Farewell, Master. Ophelia wishes you an excellent day")
-def greeting(t):
-    greetings = ["Hello", "Hi", "Greetings"]
-    return opheNeu.random.choice(greetings)
+    return ""
 def openApp(t):
     target = t
     root_dir = opheNeu.os.path.dirname(opheNeu.os.path.abspath(__file__)) 
@@ -89,9 +85,9 @@ def openApp(t):
     else:
         return(f"Shortcut '{target}' not found. Is the {target} shortcut in shortcuts folder?")   
 def playAudio(audio, sample_rate, device):
-    opheNeu.sd.play(audio, samplerate=sample_rate, device=device)
-    opheNeu.sd.wait() 
-def audioThroughMic(text, isTTS=True, mic_index=opheNeu.micIndex, speaker_index=opheNeu.speakerIndex):
+        opheNeu.sd.play(audio, samplerate=sample_rate, device=device)
+        opheNeu.sd.wait() 
+def audioThroughMic(text, isTTS=True, playThroughMic=True, mic_index=opheNeu.micIndex, speaker_index=opheNeu.speakerIndex):
     if isTTS:
         with opheNeu.tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_wav:
             fileName = temp_wav.name
@@ -109,17 +105,76 @@ def audioThroughMic(text, isTTS=True, mic_index=opheNeu.micIndex, speaker_index=
     if not isTTS: 
         audio = opheNeu.AudioSegment.from_file(fileName)
         bitrate = (audio.frame_rate * audio.frame_width * 8)
-        bitrate_kbps = bitrate / 1000 
+        #bitrate_kbps = bitrate / 1000 
         #sample_rate = (bitrate_kbps * 96000) / 1536   # will change if it becomes a problem   
         sample_rate = (96000)                          # will change if it becomes a problem   
     #else: opheNeu.os.remove(fileName)     
-    mic_thread = opheNeu.thr.Thread(target=playAudio, args=(audio_data, sample_rate, mic_index))
-    speaker_thread = opheNeu.thr.Thread(target=playAudio, args=(audio_data, sample_rate, speaker_index))
-    mic_thread.start()
-    speaker_thread.start()
-    mic_thread.join()
-    speaker_thread.join()
+
+    threads = [opheNeu.thr.Thread(target=playAudio, args=(audio_data, sample_rate, speaker_index))]
+    if playThroughMic: threads.append(opheNeu.thr.Thread(target=playAudio, args=(audio_data, sample_rate, mic_index)))
+    for thread in threads: thread.start()
+    for thread in threads: thread.join()
     return ""
- 
+def postureCheckSetup(t):
+    try:
+        def normalizeNumber(t):
+            try:
+                if isinstance(t, str):
+                    t = t.strip().lower()
+                    if t.isdigit():
+                        return int(t)
+                    return opheNeu.w2n.word_to_num(t)
+                elif isinstance(t, bool): return opheNeu.defaultPostureInterval
+                else: return t        
+            except ValueError: raise
+        t = normalizeNumber(t)
+        if t:
+            interval = t
+            with open(opheNeu.postureCheckFile, "w") as postFile:
+                postFile.write(str(interval))  
+            opheNeu.postureCheckActive = True 
+            postureCheckWrapped()         
+            return f"Posture check is set to {interval} minutes."
+        else:
+            opheNeu.os.remove(opheNeu.postureCheckFile) if opheNeu.postureCheckActive else None
+            opheNeu.postureCheckActive = False
+            return "Posture check deactivated"
+    except ValueError: return "Please provide a valid number of minutes"
+def postureCheckWrapped():
+    def postureCheck():
+        def postureCheckLoopMethod():          
+            opheNeu.postureLooping = True
+            try:  
+                with open(opheNeu.postureCheckFile, "r") as postFile:
+                    interval = int(postFile.read())
+            except FileNotFoundError: 
+                return "Posture check is currently inactive"
+            
+            opheNeu.debug_log("Posture check loop started")
+            while opheNeu.postureCheckActive:
+                # no of checks * sleep MUST equal 60
+                checks = 12
+                sleep = 5
+                for _ in range(interval * checks):
+                    opheNeu.debug_log("Posture loop, ticking...") 
+                    if not opheNeu.postureCheckActive or not opheNeu.opheliaRequired:
+                        opheNeu.debug_log("Posture check deactivated due to posture check being deactivated")
+                        return True
+                    if opheNeu.deepDebugMode: audioThroughMic("Debug message within the posture loop", True, False)
+                    opheNeu.time.sleep(sleep)
+                    
+                audioThroughMic(opheNeu.getRandomDialogue("posture"), True, False)
+            opheNeu.debug_log("Posture check deactivated due to posture duration being over")
 
-
+        if not opheNeu.postureLooping and opheNeu.postureCheckActive:             
+            postureLoop = opheNeu.thr.Thread(target=postureCheckLoopMethod, daemon=True)
+            postureLoop.start()
+            postureLoop.join()
+            return
+        else: return "Posture check is already active"
+    postureThread = opheNeu.thr.Thread(target=postureCheck, daemon=True)
+    postureThread.start()
+def speakDialogue(t="general"):
+    try:
+        return opheNeu.getRandomDialogue(t)
+    except: return f"Ophelia does not have that category {opheNeu.getRandomDialogue('errors')}" 

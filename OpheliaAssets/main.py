@@ -1,12 +1,8 @@
-import opheliaAuxilliary as opheAux
 import opheliaWake as opheWake
-import opheliaMainFunctions as opheMf
-import opheliaNeurals as opheNe
-
+import opheliaBridge as opheBri
 
 #--------------------------------------------------------#
-
-opheWake.opheliaBegin(not opheNe.debugMode)
-#opheWake.opheliaBegin(True, opheAux.commandMap)
-
+#opheWake.opheliaBegin(not opheNeu.debugMode)
+#opheWake.opheliaBegin(onStartBool=False)
+opheWake.opheliaBegin(onStartBool=False, quickstart=True)
 #--------------------------------------------------------#
