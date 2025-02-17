@@ -10,6 +10,7 @@ def opheliaListens(timeout=None, commandMap=None):
                 opheliaObey.opheliaDo(opheliaHeard, commandMap)
                 opheNeu.debug_log("Ophelia has heard a command")
             else: print("Rambling... " + opheNeu.random.choice(opheNeu.misc["emojis"])) 
+        
 
 def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer):
     opheliaHeard = None    
@@ -33,7 +34,8 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer):
     opheNeu.debug_log("Listening for user input...")
     stop_listening = currRecognizer.listen_in_background(opheNeu.mic, callback, phrase_time_limit=timeout)
     while not opheliaHeard and opheNeu.opheliaRequired:
-        opheNeu.time.sleep(0.05)    
+        opheNeu.time.sleep(0.05)
+        if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None; pass
     stop_listening(wait_for_stop=True) 
     return opheliaHeard
 

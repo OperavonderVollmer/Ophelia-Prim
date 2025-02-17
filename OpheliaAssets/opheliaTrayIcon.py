@@ -10,11 +10,11 @@ image = pilImg.open(path)
 
 def getIcon(commandMap):
     def onClicked(icon, item):
-        for key, response in commandMap.items():
+        for key in commandMap.keys():
             item = str(item).lower()
             if key == item:
-                print(f"Command Recognized: {str(key)}")
-                opheAux.audioThroughMic(response(key) if callable(response) else response, True, False)
+                opheNeu.cheatWord = f"command {key}"
+                print(f"Printing {key}...")
                 break
 
     return pystray.Icon("Ophelia", image, "Ophelia", menu=pystray.Menu(

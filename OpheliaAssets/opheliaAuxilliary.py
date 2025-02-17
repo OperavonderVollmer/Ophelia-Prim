@@ -79,7 +79,7 @@ def openApp(t):
     for app in opheNeu.os.listdir(shortcutDir):
         if app.lower() == target+".lnk":
             try:
-                opheNeu.os.system(shortcutPath)  
+                opheNeu.subprocess.Popen([shortcutPath], shell=True)  
                 return(f"Opening {target}...")
             except Exception as e: print(f"An error occurred: {str(e)}")
     else:

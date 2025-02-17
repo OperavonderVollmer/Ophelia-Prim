@@ -26,6 +26,6 @@ def opheliaBegin(onStartBool, quickstart=False):
             if opheliaEars.opheliaHears(6).__contains__("yes"): print("Getting Weather Report..."); opheliaMouth.opheliaSpeak(weatherReport)
             else: print("Weather report rejected..."); pass
         except: pass
+        opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("ready"))
     opheAux.postureCheckWrapped()
-    opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("ready"))
     opheBri.opheliaStartMainLoop(opheIcon)

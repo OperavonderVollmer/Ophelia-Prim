@@ -44,6 +44,7 @@ engine.setProperty('voice', voices[1].id)
 computer = wmi.WMI(namespace="root\\wmi")
 debugMode = config.debugMode 
 deepDebugMode = config.deepDebugMode
+cheatWord = None
 
 postureCheckFileName = "rock"
 postureCheckPath = os.path.abspath(os.path.join(os.path.dirname(__file__), "assets"))
