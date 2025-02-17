@@ -1,6 +1,6 @@
 # **Ophelia AI**
 
-The successor to my ["Oper4sTools"](https://github.com/FacundoDayne/Oper4sTools), Ophelia is an Artificial <sub>almost</sub> Intelligence —a voice-controlled assistant designed to provide a seamless and responsive experience. While not a true AI, Ophelia <sub>sort of</sub> intelligently processes voice commands, executes tasks, and integrates with various system functions to assist users efficiently.
+The successor to my ["Oper4sTools"](https://github.com/FacundoDayne/Oper4sTools), Ophelia is an Artificial Intelligence *(almost)* —a voice-controlled assistant designed to provide a seamless and responsive experience. While not a true AI, Ophelia *(sort of)* intelligently processes voice commands, executes tasks, and integrates with various system functions to assist users efficiently.
 
 ## Features
 
