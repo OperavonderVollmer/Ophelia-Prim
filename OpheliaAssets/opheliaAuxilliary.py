@@ -167,7 +167,7 @@ def postureCheckWrapped():
                     
                 audioThroughMic(opheNeu.getRandomDialogue("posture"), True, False)
                 print(f"Playing posture audio {opheNeu.datetime.now()}")
-            #opheNeu.debug_log("Posture check deactivated due to posture duration being over")
+            opheNeu.debug_log("Posture check deactivated due to posture duration being over")
 
         if not opheNeu.postureLooping and opheNeu.postureCheckActive: 
             postureLoop = opheNeu.thr.Thread(target=postureCheckLoopMethod, daemon=True)
