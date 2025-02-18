@@ -3,6 +3,7 @@ import opheliaBridge as opheBri
 
 #--------------------------------------------------------#
 #opheWake.opheliaBegin(not opheNeu.debugMode)
-#opheWake.opheliaBegin(onStartBool=False)
-opheWake.opheliaBegin(onStartBool=False, quickstart=True)
+opheWake.opheliaBegin(onStartBool=False)
+#opheWake.opheliaBegin(onStartBool=True)
+#opheWake.opheliaBegin(onStartBool=False, quickstart=True)
 #--------------------------------------------------------#

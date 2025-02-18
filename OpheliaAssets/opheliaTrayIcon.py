@@ -41,4 +41,5 @@ def iconMonitoring():
         time.sleep(5)
         opheNeu.debug_log("Icon monitoring Loop, ticking...")
     opheNeu.debug_log("Stopping Icon...")
+    tray_icon.visible = False
     tray_icon.stop()

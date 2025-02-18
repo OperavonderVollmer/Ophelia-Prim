@@ -1,3 +1,3 @@
 @echo off
-start "" ".\.venv\Scripts\python.exe" ".\OpheliaAssets\main.py"
+start "" ".\.venv\Scripts\pythonw.exe" ".\OpheliaAssets\main.py"
 exit

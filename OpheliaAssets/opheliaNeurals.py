@@ -53,6 +53,7 @@ postureCheckActive = os.path.exists(postureCheckFile)
 defaultPostureInterval = "10"
 postureLooping = False
 
+
 def debug_log(message): 
     if debugMode: print(f"[DEBUG]--------------------------------------------------------[DEBUG] {message}")
 

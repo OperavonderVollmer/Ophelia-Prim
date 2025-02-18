@@ -147,34 +147,41 @@ def postureCheckWrapped():
             try:  
                 with open(opheNeu.postureCheckFile, "r") as postFile:
                     interval = int(postFile.read())
+                    print(f"interval {interval}")
             except FileNotFoundError: 
-                return "Posture check is currently inactive"
-            
+                return "Posture check is currently inactive"            
             opheNeu.debug_log("Posture check loop started")
-            while opheNeu.postureCheckActive:
-                # no of checks * sleep MUST equal 60
-                checks = 12
-                sleep = 5
-                for _ in range(interval * checks):
-                    opheNeu.debug_log("Posture loop, ticking...") 
+            checks = 12
+            sleep = 5                       # no of checks * sleep MUST equal 60    
+            totalChecks = interval * checks   
+            opheNeu.debug_log(f"Total Checks {totalChecks}")             
+            while opheNeu.postureCheckActive:            
+                c = 1
+                for _ in range(totalChecks):
                     if not opheNeu.postureCheckActive or not opheNeu.opheliaRequired:
                         opheNeu.debug_log("Posture check deactivated due to posture check being deactivated")
                         return True
-                    if opheNeu.deepDebugMode: audioThroughMic("Debug message within the posture loop", True, False)
+                    if opheNeu.deepDebugMode: opheNeu.debug_log(f"Debug message within the posture loop #{c}")
+                    c+=1
                     opheNeu.time.sleep(sleep)
                     
                 audioThroughMic(opheNeu.getRandomDialogue("posture"), True, False)
-            opheNeu.debug_log("Posture check deactivated due to posture duration being over")
+                print(f"Playing posture audio {opheNeu.datetime.now()}")
+            #opheNeu.debug_log("Posture check deactivated due to posture duration being over")
 
-        if not opheNeu.postureLooping and opheNeu.postureCheckActive:             
+        if not opheNeu.postureLooping and opheNeu.postureCheckActive: 
             postureLoop = opheNeu.thr.Thread(target=postureCheckLoopMethod, daemon=True)
             postureLoop.start()
             postureLoop.join()
             return
         else: return "Posture check is already active"
-    postureThread = opheNeu.thr.Thread(target=postureCheck, daemon=True)
+    postureThread = opheNeu.thr.Thread(target=postureCheck)
+    print(f"Posture check starting at {opheNeu.datetime.now()}...")
     postureThread.start()
+
+
 def speakDialogue(t="general"):
     try:
         return opheNeu.getRandomDialogue(t)
     except: return f"Ophelia does not have that category {opheNeu.getRandomDialogue('errors')}" 
+

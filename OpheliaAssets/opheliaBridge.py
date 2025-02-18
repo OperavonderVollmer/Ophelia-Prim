@@ -2,9 +2,9 @@ import opheliaAuxilliary as opheAux
 from functions import opheliaMouth, opheliaEars
 
 # command recognized > speak "what is query" > listen query > getSummary > speak "summary"
-
-def opheliaStartMainLoop(opheIcon):
+def bridgeIconStart(opheIcon):
     opheIcon.startIcon(commandMap)
+def opheliaStartMainLoop():
     opheliaEars.opheliaListens(0, commandMap)
 
 def followUp(command_type):
@@ -23,18 +23,19 @@ def followUp(command_type):
         "posture": opheAux.postureCheckSetup,
         "voice": opheAux.speakDialogue
     }
-    changeables ={
+    changeables ={      #True    False
         "transmission": ["say", "play"],
     }
 
     opheliaMouth.opheliaSpeak(prompts[command_type])    
     try:
         target = opheliaEars.opheliaHears(0)
+        # checks if command type is among the changeables
         for keyword, configs in changeables.items():
             if command_type == keyword:
                 # 2nd prompt asks for mode + target
-                if target is configs[0]: mode = False
-                elif target is configs[1]: mode = True
+                if target.__contains__(configs[0]): mode = True
+                elif target.__contains__(configs[1]): mode = False
                 else: return "Query cancelled"
                 # remove mode from target and remove spaces
                 if target.lower().startswith(configs[0]):

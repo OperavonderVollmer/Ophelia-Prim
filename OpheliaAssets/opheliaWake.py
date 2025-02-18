@@ -9,8 +9,10 @@ def onStart():
         opheNeu.ctypes.windll.shell32.ShellExecuteW(None, "runas", opheNeu.sys.executable, " ".join(opheNeu.sys.argv), None, 1)
         print(f"Requested elevation: {opheNeu.sys.executable} {opheNeu.sys.argv[0]}")
         opheNeu.sys.exit(0)
+    else: pass
 
 def opheliaBegin(onStartBool, quickstart=False):
+    opheBri.bridgeIconStart(opheIcon)
     print("Ophelia Prime Booting...")
     if onStartBool: 
         onStart()
@@ -28,4 +30,5 @@ def opheliaBegin(onStartBool, quickstart=False):
         except: pass
         opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("ready"))
     opheAux.postureCheckWrapped()
-    opheBri.opheliaStartMainLoop(opheIcon)
+    opheBri.opheliaStartMainLoop()
+    

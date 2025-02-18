@@ -22,3 +22,5 @@ OpheliaAssets/__pycache__/opheliaAuxilliary.cpython-310.pyc
 OpheliaAssets/__pycache__/opheliaWake.cpython-310.pyc
 OpheliaAssets/__pycache__/opheliaAuxilliary.cpython-310.pyc
 *.pyc
+*.pyc
+OpheliaAssets/config.py

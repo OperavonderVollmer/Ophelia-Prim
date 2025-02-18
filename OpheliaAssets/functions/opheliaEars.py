@@ -18,11 +18,9 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer):
         nonlocal opheliaHeard
         try:
             opheliaHeard = currRecognizer.recognize_google(audio).lower()
-            opheNeu.debug_log(f"Detected Input: {opheliaHeard}")
         except opheNeu.sr.UnknownValueError:             
             try:
                 opheliaHeard = currRecognizer.recognize_sphinx(audio).lower()
-                opheNeu.debug_log(f"Detected Input: {opheliaHeard}")
             except opheNeu.sr.UnknownValueError:
                 opheliaHeard = None
                 opheNeu.debug_log("Could not understand audio, didn't return anything to prevent confusion")
@@ -37,6 +35,7 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer):
         opheNeu.time.sleep(0.05)
         if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None; pass
     stop_listening(wait_for_stop=True) 
+    opheNeu.debug_log(f"Ophelia has heard: {opheliaHeard}")
     return opheliaHeard
 
 
