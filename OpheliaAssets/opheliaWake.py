@@ -2,7 +2,7 @@ import opheliaNeurals as opheNeu
 import opheliaAuxilliary as opheAux
 import opheliaBridge as opheBri
 import opheliaTrayIcon as opheIcon
-from functions import opheliaMouth, opheliaEars
+from functions import opheliaMouth, opheliaHears
 
 def onStart():
     if not opheNeu.ctypes.windll.shell32.IsUserAnAdmin():
@@ -25,7 +25,7 @@ def opheliaBegin(onStartBool, quickstart=False):
         weatherReport = opheAux.getWeather(False)
         try:        
             opheliaMouth.opheliaSpeak(f"Would you like to hear today's weather report?")
-            if opheliaEars.opheliaHears(6).__contains__("yes"): print("Getting Weather Report..."); opheliaMouth.opheliaSpeak(weatherReport)
+            if opheliaHears.opheliaHears(6).__contains__("yes"): print("Getting Weather Report..."); opheliaMouth.opheliaSpeak(weatherReport)
             else: print("Weather report rejected..."); pass
         except: pass
         opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("ready"))

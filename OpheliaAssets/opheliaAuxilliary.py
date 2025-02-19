@@ -32,7 +32,7 @@ def getWikipediaSummary(t, sentences=4):
         return "I couldn't find anything on Wikipedia about that topic."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-def getWeather(showLogs="True", city=opheNeu.city):
+def getWeather(showLogs=True, city=opheNeu.city):
     url = f"https://wttr.in/{city}?format=j1"
     response = opheNeu.requests.get(url)
     if response.status_code == 200:
@@ -84,10 +84,12 @@ def openApp(t):
             except Exception as e: print(f"An error occurred: {str(e)}")
     else:
         return(f"Shortcut '{target}' not found. Is the {target} shortcut in shortcuts folder?")   
-def playAudio(audio, sample_rate, device):
-        opheNeu.sd.play(audio, samplerate=sample_rate, device=device)
-        opheNeu.sd.wait() 
+
 def audioThroughMic(text, isTTS=True, playThroughMic=True, mic_index=opheNeu.micIndex, speaker_index=opheNeu.speakerIndex):
+    def playAudio(audio, sample_rate, device):
+        opheNeu.sd.play(audio, samplerate=sample_rate, device=device)
+        opheNeu.sd.wait() \
+        
     if isTTS:
         with opheNeu.tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_wav:
             fileName = temp_wav.name
@@ -178,8 +180,6 @@ def postureCheckWrapped():
     postureThread = opheNeu.thr.Thread(target=postureCheck)
     print(f"Posture check starting at {opheNeu.datetime.now()}...")
     postureThread.start()
-
-
 def speakDialogue(t="general"):
     try:
         return opheNeu.getRandomDialogue(t)

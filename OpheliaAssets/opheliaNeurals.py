@@ -1,3 +1,4 @@
+# APIs
 import os
 import sys
 import time
@@ -21,8 +22,7 @@ import sounddevice as sd
 import speech_recognition as sr
 import PIL.Image as pilImg
 import pystray
-import config
-from opheliaDialogue import dialogue , misc
+import re
 
 from word2number import w2n
 from datetime import datetime
@@ -30,6 +30,11 @@ from pydub import AudioSegment
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.luhn import LuhnSummarizer
+
+# Importing from project
+import config
+from opheliaDialogue import dialogue , misc
+
 
 city = config.city
 micIndex = config.micIndex
@@ -59,3 +64,12 @@ def debug_log(message):
 
 def getRandomDialogue(category):
     return random.choice(dialogue[category])
+
+BLACKLISTED_KEYWORDS = [r"\bimport\b", r"\bexec\b", r"\beval\b", r"\bsystem\b", r"\bos\b",r"\bsubprocess\b",r"\brm\b",r"\bdel\b",r"\bopen\b",r"\bfile\b"]
+def checkText(text):
+    with re:
+        for keyword in BLACKLISTED_KEYWORDS:
+            if re.search(keyword, text, re.IGNORECASE):
+                debug_log(f"Blocked potentially dangerous input: {text}")
+                return None  # Return None to indicate blocked input
+        else: return text

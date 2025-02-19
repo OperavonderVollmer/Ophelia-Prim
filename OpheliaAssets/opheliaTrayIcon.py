@@ -1,16 +1,15 @@
 import os, pystray, time, threading
 import PIL.Image as pilImg
-from functions import opheliaMouth 
 import opheliaNeurals as opheNeu
-import opheliaAuxilliary as opheAux
+import opheliaPlugins as ophePlu
 
 path = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(path, "assets", "op.png")
 image = pilImg.open(path)
 
-def getIcon(commandMap):
+def getIcon(commandMap=ophePlu.plugins):
     def onClicked(icon, item):
-        for key in commandMap.keys():
+        for key in commandMap:
             item = str(item).lower()
             if key == item:
                 opheNeu.cheatWord = f"command {key}"
@@ -18,16 +17,17 @@ def getIcon(commandMap):
                 break
 
     return pystray.Icon("Ophelia", image, "Ophelia", menu=pystray.Menu(
-        *[pystray.MenuItem(key.capitalize(), onClicked) for key in commandMap.keys()],
+        *[pystray.MenuItem(key.capitalize(), onClicked) for key in commandMap if key != "Sleep"],
+        pystray.MenuItem("Sleep", onClicked)
     ))
 
 tray_icon = None
 
-def startIcon(commandMap = {"stat": "opheAux.getCPUStats","crush his balls": lambda: "Now crushing his balls"}):
+def startIcon():
     def iconLogic():
         opheNeu.debug_log("Starting Icon...")
         global tray_icon
-        tray_icon = getIcon(commandMap)
+        tray_icon = getIcon()
         trayThread = threading.Thread(target=tray_icon.run, daemon=True)
         trayThread.start()
         iconMonitoring()
@@ -39,7 +39,7 @@ def startIcon(commandMap = {"stat": "opheAux.getCPUStats","crush his balls": lam
 def iconMonitoring():
     while opheNeu.opheliaRequired: 
         time.sleep(5)
-        opheNeu.debug_log("Icon monitoring Loop, ticking...")
+        if opheNeu.deepDebugMode: opheNeu.debug_log("Icon monitoring Loop, ticking...")
     opheNeu.debug_log("Stopping Icon...")
     tray_icon.visible = False
     tray_icon.stop()

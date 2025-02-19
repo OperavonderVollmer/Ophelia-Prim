@@ -1,11 +1,11 @@
 import opheliaAuxilliary as opheAux
-from functions import opheliaMouth, opheliaEars
+from functions import opheliaMouth, opheliaListens, opheliaHears
 
 # command recognized > speak "what is query" > listen query > getSummary > speak "summary"
 def bridgeIconStart(opheIcon):
-    opheIcon.startIcon(commandMap)
+    opheIcon.startIcon()
 def opheliaStartMainLoop():
-    opheliaEars.opheliaListens(0, commandMap)
+    opheliaListens.opheliaListens(0, commandMap)
 
 def followUp(command_type):
     prompts = {
@@ -29,7 +29,7 @@ def followUp(command_type):
 
     opheliaMouth.opheliaSpeak(prompts[command_type])    
     try:
-        target = opheliaEars.opheliaHears(0)
+        target = opheliaHears.opheliaHears(0)
         # checks if command type is among the changeables
         for keyword, configs in changeables.items():
             if command_type == keyword:

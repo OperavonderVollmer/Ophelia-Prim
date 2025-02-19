@@ -12,7 +12,7 @@ def opheliaListens(timeout=None, commandMap=None):
             else: print("Rambling... " + opheNeu.random.choice(opheNeu.misc["emojis"])) 
         
 
-def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer):
+def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer, timed=False):
     opheliaHeard = None    
     def callback(currRecognizer, audio):
         nonlocal opheliaHeard
@@ -30,12 +30,17 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer):
             opheliaHeard = None
             opheNeu.debug_log(f"Recognition error: {e}, didn't return anything to prevent confusion")
     opheNeu.debug_log("Listening for user input...")
+
+    if timed:
+        opheliaHeard = currRecognizer.listen(opheNeu.mic, timeout=timeout)
+        return opheliaHeard if opheliaHeard else None
     stop_listening = currRecognizer.listen_in_background(opheNeu.mic, callback, phrase_time_limit=timeout)
     while not opheliaHeard and opheNeu.opheliaRequired:
         opheNeu.time.sleep(0.05)
-        if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None; pass
-    stop_listening(wait_for_stop=True) 
-    opheNeu.debug_log(f"Ophelia has heard: {opheliaHeard}")
+        if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None
+        if opheliaHeard or not opheNeu.opheliaRequired: 
+            stop_listening(wait_for_stop=False) 
+            break    
     return opheliaHeard
 
 
@@ -72,3 +77,6 @@ def depreciatedOpheliaEars():
             except opheNeu.sr.UnknownValueError:
                 opheliaHeard = ""
             finally: return opheliaHeard   
+
+
+
