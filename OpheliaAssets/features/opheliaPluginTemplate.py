@@ -26,4 +26,6 @@ class opheliaPlugin(ABC):
     def execute(self):
         # enter code here
         pass
-  
+    def cheatResult(self):
+
+        pass

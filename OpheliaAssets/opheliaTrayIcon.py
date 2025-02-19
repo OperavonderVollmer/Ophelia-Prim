@@ -7,17 +7,34 @@ path = os.path.dirname(os.path.abspath(__file__))
 path = os.path.join(path, "assets", "op.png")
 image = pilImg.open(path)
 
+
+
 def getIcon(commandMap=ophePlu.plugins):
     def onClicked(icon, item):
         for key in commandMap:
+            key = key.lower()
             item = str(item).lower()
             if key == item:
                 opheNeu.cheatWord = f"command {key}"
                 print(f"Printing {key}...")
                 break
-
+    def hasOptions(key):
+        return pystray.Menu(
+            pystray.MenuItem("Open", onClicked),
+            pystray.MenuItem("Options", onClicked)
+        )
+    
+    def hasOptions(key):
+        def onClicked(icon, item):
+            ophePlu.plugins[key].cheatResult(str(item))
+        options = ophePlu.plugins[key].getOptions()
+        return pystray.Menu(
+            *[pystray.MenuItem(key.capitalize(), onClicked) for key in options]
+        )
+    
     return pystray.Icon("Ophelia", image, "Ophelia", menu=pystray.Menu(
-        *[pystray.MenuItem(key.capitalize(), onClicked) for key in commandMap if key != "Sleep"],
+        *[pystray.MenuItem(key.capitalize(), onClicked) for key in commandMap if key != "Sleep" and not hasattr(commandMap[key],"getOptions")],
+        *[pystray.MenuItem(key.capitalize(), hasOptions(key)) for key in commandMap if key != "Sleep" and hasattr(commandMap[key],"getOptions")],
         pystray.MenuItem("Sleep", onClicked)
     ))
 

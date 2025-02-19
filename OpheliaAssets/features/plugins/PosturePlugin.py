@@ -1,4 +1,4 @@
-from featureTesting.opheliaPluginTemplate import opheliaPlugin
+from features.opheliaPluginTemplate import opheliaPlugin
 import opheliaNeurals as opheNeu
 import opheliaPlugins as ophePlu
 

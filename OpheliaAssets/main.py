@@ -8,8 +8,3 @@ import opheliaWake as opheWake
 opheWake.opheliaBegin(onStartBool=False, quickstart=True)
 
 #--------------------------------------------------------#
-"""import opheliaPlugins as ophePlu
-ophePlu.plugins["Sleep"].execute()"""
-
-"""from functions import opheliaObey
-opheliaObey.opheliaDo("command stats")"""

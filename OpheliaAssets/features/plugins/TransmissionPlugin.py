@@ -1,4 +1,4 @@
-from featureTesting.opheliaPluginTemplate import opheliaPlugin
+from features.opheliaPluginTemplate import opheliaPlugin
 import opheliaNeurals as opheNeu
 
 class plugin(opheliaPlugin):
@@ -6,6 +6,16 @@ class plugin(opheliaPlugin):
         super().__init__(name="Transmission", prompt="What would you like Ophelia to say or play?", needsArgs=True, modes=["say", "play"])
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
+
+    def getOptions(self, dir=False):
+        root_dir = opheNeu.os.path.dirname(opheNeu.os.path.abspath(__file__)) 
+        audioDir = opheNeu.os.path.join(root_dir, "..", "..", "assets/sound_bites")  
+        if dir: return audioDir
+        valid = []
+        for file in opheNeu.os.listdir(audioDir):
+            filep = opheNeu.os.path.join(audioDir, file)
+            if filep.endswith(".wav"): valid.append(file[:-4])
+        return valid 
 
     def audioThroughMic(self, text, isTTS=True, playThroughMic=True, mic_index=opheNeu.micIndex, speaker_index=opheNeu.speakerIndex):
         def playAudio(audio, sample_rate, device):
@@ -19,8 +29,7 @@ class plugin(opheliaPlugin):
             opheNeu.engine.runAndWait() 
         else:
             target = text.replace(" ", "")
-            root_dir = opheNeu.os.path.dirname(opheNeu.os.path.abspath(__file__)) 
-            audioDir = opheNeu.os.path.join(root_dir, "..", "..", "assets/sound_bites")  
+            audioDir = self.getOptions(dir=True)
             audioPath = opheNeu.os.path.join(audioDir, target)
             fileName = audioPath + ".wav"
         with opheNeu.wave.open(fileName, 'rb') as wav_file:
@@ -44,6 +53,8 @@ class plugin(opheliaPlugin):
         target = self.prepExecute()
         self.audioThroughMic(target[0], isTTS=(target[1] == "say"))
 
+    def cheatResult(self, target): return self.audioThroughMic(target, isTTS=False)
+    
 def get_plugin():
     return plugin()
 

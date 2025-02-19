@@ -1,4 +1,4 @@
-from featureTesting.opheliaPluginTemplate import opheliaPlugin
+from features.opheliaPluginTemplate import opheliaPlugin
 from functions.opheliaMouth import opheliaSpeak
 
 class plugin(opheliaPlugin):

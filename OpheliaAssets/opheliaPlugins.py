@@ -1,4 +1,4 @@
-from featureTesting import opheliaPluginLoader
+from features import opheliaPluginLoader
 
 plugins = opheliaPluginLoader.loadPlugins()
 def getPluginsKeys():

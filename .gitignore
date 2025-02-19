@@ -26,4 +26,5 @@ OpheliaAssets/__pycache__/opheliaAuxilliary.cpython-310.pyc
 OpheliaAssets/config.py
 OpheliaAssets/config.py
 OpheliaAssets/config.py
-OpheliaAssets/featureTesting/plugins/z----TemplatePlugin.py
+OpheliaAssets/features/plugins/z----TemplatePlugin.py
+OpheliaAssets/features/z----TemplatePlugin.py
