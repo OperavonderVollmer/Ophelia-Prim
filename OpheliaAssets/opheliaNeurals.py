@@ -23,6 +23,7 @@ import speech_recognition as sr
 import PIL.Image as pilImg
 import pystray
 import re
+import logging
 
 from word2number import w2n
 from datetime import datetime
@@ -34,7 +35,8 @@ from sumy.summarizers.luhn import LuhnSummarizer
 # Importing from project
 import config
 from opheliaDialogue import dialogue , misc
-
+from functions import opheliaAsync as asy
+import opheliaLogging as opheLog
 
 city = config.city
 micIndex = config.micIndex
@@ -58,18 +60,27 @@ postureCheckActive = os.path.exists(postureCheckFile)
 defaultPostureInterval = "10"
 postureLooping = False
 
+discordLoop = None
 
-def debug_log(message): 
-    if debugMode: print(f"[DEBUG]--------------------------------------------------------[DEBUG] {message}")
+def debug_log(message, deepLog=False): 
+    output = f"[DEBUG]--------------------------------------------------------[DEBUG] {message}"
+    try:
+        if discordLoop is not None: discordLog(output, "deepLogChannel" if deepLog else "logChannel" )
+    except ImportError: print("Discord implementation cannot be located")
+    except RuntimeError: print("Discord loop is not running")
+    opheLog.logging.debug(output + " - " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    if debugMode: 
+        if deepLog and not deepDebugMode: return
+        print(output)
+
+def discordLog(message, selectedChannel):
+    from functions import opheliaDiscord as opheDisc
+    try:
+        asy.async_to_sync(opheDisc.sendChannel(message, selectedChannel), discordLoop)
+    except RuntimeWarning: print("Didn't await")
+
+
 
 def getRandomDialogue(category):
     return random.choice(dialogue[category])
 
-BLACKLISTED_KEYWORDS = [r"\bimport\b", r"\bexec\b", r"\beval\b", r"\bsystem\b", r"\bos\b",r"\bsubprocess\b",r"\brm\b",r"\bdel\b",r"\bopen\b",r"\bfile\b"]
-def checkText(text):
-    with re:
-        for keyword in BLACKLISTED_KEYWORDS:
-            if re.search(keyword, text, re.IGNORECASE):
-                debug_log(f"Blocked potentially dangerous input: {text}")
-                return None  # Return None to indicate blocked input
-        else: return text

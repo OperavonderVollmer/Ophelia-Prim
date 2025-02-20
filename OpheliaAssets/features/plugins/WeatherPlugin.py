@@ -42,6 +42,8 @@ class plugin(opheliaPlugin):
     def execute(self):
         return self.getWeather()
 
+    def cheatResult(self):
+        return self.execute()
 def get_plugin():
     return plugin()
 

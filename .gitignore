@@ -28,3 +28,7 @@ OpheliaAssets/config.py
 OpheliaAssets/config.py
 OpheliaAssets/features/plugins/z----TemplatePlugin.py
 OpheliaAssets/features/z----TemplatePlugin.py
+security.log
+OpheliaAssets/.env
+debug.log
+.vscode/settings.json

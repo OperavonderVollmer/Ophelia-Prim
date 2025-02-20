@@ -15,6 +15,9 @@ class plugin(opheliaPlugin):
         target = self.prepExecute()
         return self.getDialogue(target)
 
+    def cheatResult(self, target):
+        return self.getDialogue(target)
+    
 def get_plugin():
     return plugin()
 

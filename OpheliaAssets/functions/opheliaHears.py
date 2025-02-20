@@ -21,7 +21,6 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer, timed=False):
 
     mic = opheNeu.sr.Microphone()
 
-    print("Started Listening")
     if timed:
         with mic as source:
             opheliaHeard = currRecognizer.listen(source, timeout=timeout)
@@ -33,5 +32,5 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer, timed=False):
         if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None
             
     stop_listening(wait_for_stop=False) 
-    print("Stopped Listening")
+    opheNeu.debug_log(f"Heard {opheliaHeard}")
     return opheliaHeard

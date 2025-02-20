@@ -54,7 +54,7 @@ class plugin(opheliaPlugin):
                         if not opheNeu.postureCheckActive or not opheNeu.opheliaRequired:
                             opheNeu.debug_log("Posture check deactivated due to posture check being deactivated")
                             return True
-                        if opheNeu.deepDebugMode: opheNeu.debug_log(f"Debug message within the posture loop #{c}")
+                        opheNeu.debug_log(f"Debug message within the posture loop #{c}", True)
                         #ophePlu.plugins["Transmission"].audioThroughMic(f"Debug message within the posture loop #{c}", True, False)
                         c+=1
                         opheNeu.time.sleep(sleep)                        
@@ -76,6 +76,10 @@ class plugin(opheliaPlugin):
         target = self.prepExecute()
         return self.postureCheckSetup(target)
 
+                #command = number of seconds
+    def cheatResult(self, command):
+        return self.postureCheckSetup(command)
+    
 def get_plugin():
     return plugin()
 

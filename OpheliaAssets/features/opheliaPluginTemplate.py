@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from functions.opheliaMouth import opheliaSpeak
 from functions.opheliaHears import opheliaHears
+#from functions.opheliaDiscord import waitInput
 
 class opheliaPlugin(ABC):
     def __init__(self, name: str, prompt: str= "", needsArgs: bool = False, modes = []):

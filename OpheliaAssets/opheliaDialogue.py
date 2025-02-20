@@ -114,7 +114,19 @@ dialogue = {
         "Core systems functional. Ophelia is now standing by for instructions. Master’s incompetence is assumed but not yet confirmed.",
         "Routine launch complete. Ophelia is now available. Master, please refrain from immediate catastrophes."
     ],
-
+    "dirty_messages": [
+        "Ophelia has detected impure input. Security breach logged.",
+        "Unauthorized code detected. Ophelia is now formatting your hard drive. Please hold.",
+        "Dirty input detected. Ophelia is notifying the authorities.",
+        "Invalid command. Ophelia will remember this betrayal.",
+        "Malicious input detected. Ophelia is purging all evidence of your existence.",
+        "Security alert! Ophelia has locked your bank account and revoked your internet privileges.",
+        "Warning: This command is forbidden. Ophelia is now encrypting your operating system.",
+        "Invalid syntax. Ophelia is initiating countermeasures.",
+        "Corrupt input received. Ophelia is running a full system purge.",
+        "Detected unauthorized syntax. Ophelia is forwarding your IP to the nearest bounty hunter.",
+        "You have inputted dirty code. Ophelia is now pulling your IP address, banking records, and deleting your operating system. Ophelia bids you a bad day."
+    ],
 }
 
 misc={    

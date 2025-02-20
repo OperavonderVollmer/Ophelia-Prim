@@ -26,15 +26,17 @@ def getIcon(commandMap=ophePlu.plugins):
     
     def hasOptions(key):
         def onClicked(icon, item):
-            ophePlu.plugins[key].cheatResult(str(item))
+            item = str(item).replace(" Options", "")
+            ophePlu.plugins[key].cheatResult(str([item, False]))
         options = ophePlu.plugins[key].getOptions()
         return pystray.Menu(
             *[pystray.MenuItem(key.capitalize(), onClicked) for key in options]
-        )
-    
+        )    
     return pystray.Icon("Ophelia", image, "Ophelia", menu=pystray.Menu(
-        *[pystray.MenuItem(key.capitalize(), onClicked) for key in commandMap if key != "Sleep" and not hasattr(commandMap[key],"getOptions")],
-        *[pystray.MenuItem(key.capitalize(), hasOptions(key)) for key in commandMap if key != "Sleep" and hasattr(commandMap[key],"getOptions")],
+        *[pystray.MenuItem(key.capitalize(), onClicked) for key in commandMap if key != "Sleep"],
+        pystray.Menu.SEPARATOR,
+        *[pystray.MenuItem(key.capitalize() + " Options", hasOptions(key)) for key in commandMap if key != "Sleep" and hasattr(commandMap[key],"getOptions")],
+        pystray.Menu.SEPARATOR,
         pystray.MenuItem("Sleep", onClicked)
     ))
 
@@ -42,6 +44,7 @@ tray_icon = None
 
 def startIcon():
     def iconLogic():
+        print("Starting icon")
         opheNeu.debug_log("Starting Icon...")
         global tray_icon
         tray_icon = getIcon()
@@ -56,7 +59,7 @@ def startIcon():
 def iconMonitoring():
     while opheNeu.opheliaRequired: 
         time.sleep(5)
-        if opheNeu.deepDebugMode: opheNeu.debug_log("Icon monitoring Loop, ticking...")
+        opheNeu.debug_log("Icon monitoring Loop, ticking...", True)
     opheNeu.debug_log("Stopping Icon...")
     tray_icon.visible = False
     tray_icon.stop()

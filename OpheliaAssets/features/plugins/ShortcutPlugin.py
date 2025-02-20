@@ -34,8 +34,9 @@ class plugin(opheliaPlugin):
     def execute(self):
         target = self.prepExecute()
         self.openApp(target)
-        
-    def cheatResult(self, target): return self.openApp(target)
+    # target
+    def cheatResult(self, target): 
+        return self.openApp(target)
 
 def get_plugin():
     return plugin()
