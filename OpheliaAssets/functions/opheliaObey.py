@@ -17,7 +17,7 @@ def opheliaDo(command, speechSource=True, isLoud=True):
                     if output and isLoud and output != "556036":
                         def outputThread():
                             ophePlu.plugins["Transmission"].audioThroughMic(output, True, False)
-                        thre = opheNeu.thr.Thread(target=outputThread, daemon=True)
+                        thre = opheNeu.thr.Thread(target=outputThread)
                         thre.start()
                     return output
         except Exception as e:

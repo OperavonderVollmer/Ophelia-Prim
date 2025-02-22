@@ -15,6 +15,7 @@ def getIcon(commandMap=ophePlu.plugins):
             key = key.lower()
             item = str(item).lower()
             if key == item:
+                # forcefully gives ophelia a word, emulating a spoken command
                 opheNeu.cheatWord = f"command {key}"
                 print(f"Printing {key}...")
                 break
@@ -27,6 +28,7 @@ def getIcon(commandMap=ophePlu.plugins):
     def hasOptions(key):
         def onClicked(icon, item):
             item = str(item).replace(" Options", "")
+            # directly calls a plugin's cheatResult, bypassing the need for a spoken command
             ophePlu.plugins[key].cheatResult(f"{item}")
         options = ophePlu.plugins[key].getOptions()
         return pystray.Menu(
@@ -58,7 +60,7 @@ def startIcon():
 # stop only if icon is not none and ophelia is not required
 def iconMonitoring():
     while opheNeu.opheliaRequired: 
-        time.sleep(30)
+        time.sleep(10)
         opheNeu.debug_log("Icon monitoring Loop, ticking...", True)
     opheNeu.debug_log("Stopping Icon...")
     tray_icon.visible = False

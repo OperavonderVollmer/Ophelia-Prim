@@ -48,7 +48,6 @@ async def sendChannel(output, selectedChannel):
         if not isOnline: return
         channelId = discordTokens[selectedChannel]
         channel = client.get_channel(channelId)
-        print(f"Channel: {channel} ChannelID: {channelId}")
         if channel is not None: await channel.send(output)
         else: print("Channel not found")
     except Exception as e: print(e)

@@ -17,20 +17,23 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer, timed=False):
         except opheNeu.sr.RequestError as e:
             opheliaHeard = None
             opheNeu.debug_log(f"Recognition error: {e}, didn't return anything to prevent confusion")
-    opheNeu.debug_log("Listening for user input...")
+    print("Listening for user input...")
 
     mic = opheNeu.sr.Microphone()
 
     if timed:
         with mic as source:
-            opheliaHeard = currRecognizer.listen(source, timeout=timeout)
-            return opheliaHeard if opheliaHeard else None
-        
+            try:
+                audio = currRecognizer.listen(source, timeout=timeout)
+                callback(currRecognizer, audio)
+                return opheliaHeard if opheliaHeard else None
+            except opheNeu.sr.WaitTimeoutError:
+                return "Query cancelled"
     stop_listening = currRecognizer.listen_in_background(mic, callback, phrase_time_limit=timeout)
     while not opheliaHeard and opheNeu.opheliaRequired:
         opheNeu.time.sleep(0.05)
         if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None
             
     stop_listening(wait_for_stop=False) 
-    opheNeu.debug_log(f"Heard {opheliaHeard}")
+    opheNeu.debug_log(f"Heard ```{opheliaHeard}```")
     return opheliaHeard

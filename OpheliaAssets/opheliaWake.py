@@ -30,7 +30,7 @@ def opheliaBegin(onStartBool, quickstart=False, discord=True):
         weatherReport = ophePlu.plugins["Weather"].execute(showLogs=False)
         try:        
             opheliaMouth.opheliaSpeak(f"Would you like to hear today's weather report?")
-            if opheliaHears.opheliaHears().__contains__("yes"): 
+            if opheliaHears.opheliaHears(8, timed=True).__contains__("yes"): 
                 print("Getting Weather Report..."); 
                 opheliaMouth.opheliaSpeak(weatherReport)
             else: print("Weather report rejected..."); pass

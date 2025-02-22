@@ -9,18 +9,11 @@ class plugin(opheliaPlugin):
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
     def postureCheckSetup(self, t):
         try:
-            def normalizeNumber(t):
-                try:
-                    if isinstance(t, str):
-                        t = t.strip().lower()
-                        if t.isdigit():
-                            return int(t)
-                        return opheNeu.w2n.word_to_num(t)
-                    elif isinstance(t, bool): return opheNeu.defaultPostureInterval
-                    else: return t        
-                except ValueError: raise
             t = t.replace(" minutes", "")
-            t = normalizeNumber(t)
+            t = ophePlu.normalizeNumber(t)
+            if t := isinstance(t, bool) == True: 
+                if t == True: t = opheNeu.defaultPostureInterval
+                else: t = False  
             if t:
                 interval = t
                 with open(opheNeu.postureCheckFile, "w") as postFile:
@@ -44,8 +37,8 @@ class plugin(opheliaPlugin):
                 except FileNotFoundError: 
                     return "Posture check is currently inactive"            
                 opheNeu.debug_log("Posture check loop started")
-                checks = 1
-                sleep = 60                       # no of checks * sleep MUST equal 60    
+                checks = 6
+                sleep = 10                       # no of checks * sleep MUST equal 60    
                 totalChecks = interval * checks   
                 opheNeu.debug_log(f"Total Checks {totalChecks}")             
                 while opheNeu.postureCheckActive:            

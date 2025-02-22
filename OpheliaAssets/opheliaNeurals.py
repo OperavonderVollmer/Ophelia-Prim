@@ -87,7 +87,18 @@ def killDiscord ():
         asy.async_to_sync(opheDisc.stopOpheliaDiscord(), discordLoop)
     except RuntimeWarning: print("Didn't await")
 
-
 def getRandomDialogue(category):
     return random.choice(dialogue[category])
 
+def normalizeNumber(t):
+    try:
+        if isinstance(t, str):
+            t = t.strip().lower()
+            if t.isdigit():
+                return int(t)
+            return w2n.word_to_num(t)
+        else: return t        
+    except ValueError: raise
+
+def copyToClipboard(t):
+    subprocess.run("clip", text=True, input=t, shell=True)

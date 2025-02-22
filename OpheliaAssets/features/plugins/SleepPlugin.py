@@ -14,8 +14,9 @@ class plugin(opheliaPlugin):
         def sayGoodbye():
             ophePlu.plugins["Transmission"].audioThroughMic(output, True, False)
             opheNeu.opheliaRequired = False
-        opheNeu.thr.Thread(target=sayGoodbye).start()
-        
+            print("Ophelia no longer required")
+        if opheNeu.discordLoop: opheNeu.discordLoop.stop()
+        opheNeu.thr.Thread(target=sayGoodbye).start()        
         return output
 
     def execute(self):

@@ -4,7 +4,7 @@ from freedictionaryapi.clients.sync_client import DictionaryApiClient
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Definition", prompt="What would would you like Ophelia to look up?", needsArgs=True, modes=False)
+        super().__init__(name="Definition", prompt="What word would you like Ophelia to look up?", needsArgs=True, modes=False)
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
 
@@ -25,7 +25,7 @@ class plugin(opheliaPlugin):
                     i += 1
             if len(stack) == 0: raise Exception
             else: return f"There are {len(stack)} definitions for {t}\n" + "".join(stack)
-        except Exception as e: return f"Could not find a definition for {t}"
+        except Exception: return f"Could not find a definition for {t}"
 
 
     def execute(self):
