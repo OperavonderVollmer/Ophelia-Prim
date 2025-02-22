@@ -37,11 +37,11 @@ class plugin(opheliaPlugin):
                 return data
             except requests.RequestException as e:
                 return {"error": f"Request failed: {e}"}
+            
         def messageResults(resultDict, isCheat=isCheat):
             """
                 Makes the message readable
                 Use this link for more info: https://developers.google.com/custom-search/v1/reference/rest/v1/Search
-
                 Also strips the link if not called from discord to ensure its not too cluttered
             """
             text = ""
@@ -49,12 +49,12 @@ class plugin(opheliaPlugin):
             for result in resultDict:
                 text += "Result: " + resultDict[result]['title'] + "\n"
                 if isCheat:
-                    text += "Link: " + resultDict[result]['url'] + "\n"
+                    text += "Link: " + resultDict[result]['link'] + "\n"
                 text += "Snippet: " + resultDict[result]['snippet'] + "\n"
                 text += f"That was result number: {str(i)}\n\n"
                 i += 1
             return text
-        
+
         def interpretResults(message):
             """
                 After reading the message, asks the user if they want to copy any of the links
@@ -66,7 +66,7 @@ class plugin(opheliaPlugin):
             index = opheNeu.normalizeNumber(index.replace("result", ""))
             index = "result"+str(index)
             if index.startswith("result"):
-                opheNeu.copyToClipboard(resultDict[index]['url'])
+                opheNeu.copyToClipboard(resultDict[index]['link'])
                 return f"Copied {resultDict[index]['title']} link to clipboard"
             return "Result not found"
         
@@ -79,7 +79,7 @@ class plugin(opheliaPlugin):
         for result in response['items']:
             resultDict["result"+str(len(resultDict)+1)] = {
                 "title": result['title'],
-                "url": result['formattedUrl'],
+                "link": result['link'],
                 "snippet": result['snippet'],
             }
         mess = messageResults(resultDict)
