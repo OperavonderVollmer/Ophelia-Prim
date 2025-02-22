@@ -27,7 +27,7 @@ def getIcon(commandMap=ophePlu.plugins):
     def hasOptions(key):
         def onClicked(icon, item):
             item = str(item).replace(" Options", "")
-            ophePlu.plugins[key].cheatResult(str([item, False]))
+            ophePlu.plugins[key].cheatResult(f"{item}")
         options = ophePlu.plugins[key].getOptions()
         return pystray.Menu(
             *[pystray.MenuItem(key.capitalize(), onClicked) for key in options]
@@ -58,7 +58,7 @@ def startIcon():
 # stop only if icon is not none and ophelia is not required
 def iconMonitoring():
     while opheNeu.opheliaRequired: 
-        time.sleep(5)
+        time.sleep(30)
         opheNeu.debug_log("Icon monitoring Loop, ticking...", True)
     opheNeu.debug_log("Stopping Icon...")
     tray_icon.visible = False

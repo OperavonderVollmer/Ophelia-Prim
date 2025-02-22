@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from functions.opheliaMouth import opheliaSpeak
 from functions.opheliaHears import opheliaHears
+import opheliaNeurals as opheNeu
 #from functions.opheliaDiscord import waitInput
 
 class opheliaPlugin(ABC):
@@ -19,10 +20,12 @@ class opheliaPlugin(ABC):
             if self.modes:
                 for mode in self.modes:
                     if target.__contains__(mode): 
-                        target = target.lower().replace(mode, "").replace(" ", "")
-                        return [target, mode]
+                        find = target.lower().replace(mode, "").replace(" ", "")
+                        target = [find, mode]
+                        break
                 else: return "Query cancelled"
-            else: return target
+            opheNeu.debug_log(f"Sending parameters {target} from {self.name}")
+            return target
         pass
     def execute(self):
         # enter code here

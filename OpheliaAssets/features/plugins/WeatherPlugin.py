@@ -39,11 +39,11 @@ class plugin(opheliaPlugin):
             return output
         else:
             return "Unfortunately, Could not fetch weather data."
-    def execute(self):
-        return self.getWeather()
+    def execute(self, showLogs=True):
+        return self.getWeather(showLogs)
 
-    def cheatResult(self):
-        return self.execute()
+    def cheatResult(self, showLogs=True):
+        return self.execute(showLogs)
 def get_plugin():
     return plugin()
 

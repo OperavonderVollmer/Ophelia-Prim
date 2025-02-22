@@ -1,5 +1,5 @@
 import opheliaNeurals as opheNeu
-import opheliaAuxilliary as opheAux
+import opheliaPlugins as ophePlu
 import opheliaBridge as opheBri
 import opheliaTrayIcon as opheIcon
 from functions import opheliaMouth, opheliaHears, opheliaDiscord as opheDisc
@@ -12,29 +12,32 @@ def onStart():
     else: pass
 
 def opheliaBegin(onStartBool, quickstart=False, discord=True):
-    opheBri.bridgeIconStart(opheIcon)
     print("Ophelia Prime Booting...")
+    opheBri.bridgeIconStart(opheIcon)
     opheNeu.debug_log("Ophelia Prime Booting...")
     if onStartBool: 
         onStart()
+    if discord:
+        opheDisc.discordLoop = opheDisc.wakeOpheliaDiscord()
+        opheNeu.discordLoop = opheDisc.discordLoop
+        opheNeu.thr.Thread(target=opheDisc.discordLoop.run_forever, daemon=True).start()
     if not quickstart:
         opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("greetings"))
         with opheNeu.sr.Microphone(device_index=1) as source:
             opheNeu.recognizer.adjust_for_ambient_noise(source)
             opheNeu.recognizer.energy_threshold *= 0.75
             print(f"Adjusted energy threshold: {opheNeu.recognizer.energy_threshold}")
-        weatherReport = opheAux.getWeather(False)
+        weatherReport = ophePlu.plugins["Weather"].execute(showLogs=False)
         try:        
             opheliaMouth.opheliaSpeak(f"Would you like to hear today's weather report?")
-            if opheliaHears.opheliaHears(6, True).__contains__("yes"): print("Getting Weather Report..."); opheliaMouth.opheliaSpeak(weatherReport)
+            if opheliaHears.opheliaHears().__contains__("yes"): 
+                print("Getting Weather Report..."); 
+                opheliaMouth.opheliaSpeak(weatherReport)
             else: print("Weather report rejected..."); pass
         except: pass
         opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("ready"))
-    if discord:
-        opheDisc.discordLoop = opheDisc.wakeOpheliaDiscord()
-        opheNeu.discordLoop = opheDisc.discordLoop
-        opheNeu.thr.Thread(target=opheDisc.discordLoop.run_forever, daemon=True).start()
+    
 
-    opheAux.postureCheckWrapped()
+    ophePlu.plugins["Posture"].postureCheckWrapped()
     opheBri.opheliaStartMainLoop()
     

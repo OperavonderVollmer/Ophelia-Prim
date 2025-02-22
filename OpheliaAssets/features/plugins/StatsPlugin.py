@@ -18,7 +18,7 @@ class plugin(opheliaPlugin):
         print(text)
         return text
 
-    def cheatResult(self):
+    def cheatResult(self, t):
         return self.execute()
 
 def get_plugin():

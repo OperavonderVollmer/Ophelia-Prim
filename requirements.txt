@@ -28,3 +28,5 @@ google-auth-oauthlib
 
 discord
 python-dotenv
+
+python-freeDictionaryAPI

@@ -153,8 +153,8 @@ def postureCheckWrapped():
             except FileNotFoundError: 
                 return "Posture check is currently inactive"            
             opheNeu.debug_log("Posture check loop started")
-            checks = 12
-            sleep = 5                       # no of checks * sleep MUST equal 60    
+            checks = 4
+            sleep = 15                     # no of checks * sleep MUST equal 60    
             totalChecks = interval * checks   
             opheNeu.debug_log(f"Total Checks {totalChecks}")             
             while opheNeu.postureCheckActive:            

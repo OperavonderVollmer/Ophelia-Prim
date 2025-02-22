@@ -68,6 +68,7 @@ def debug_log(message, deepLog=False):
         if discordLoop is not None: discordLog(output, "deepLogChannel" if deepLog else "logChannel" )
     except ImportError: print("Discord implementation cannot be located")
     except RuntimeError: print("Discord loop is not running")
+    except Exception as e: output = e 
     opheLog.logging.debug(output + " - " + datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     if debugMode: 
         if deepLog and not deepDebugMode: return
@@ -79,6 +80,12 @@ def discordLog(message, selectedChannel):
         asy.async_to_sync(opheDisc.sendChannel(message, selectedChannel), discordLoop)
     except RuntimeWarning: print("Didn't await")
 
+def killDiscord ():
+    if discordLoop is None: return
+    from functions import opheliaDiscord as opheDisc
+    try: 
+        asy.async_to_sync(opheDisc.stopOpheliaDiscord(), discordLoop)
+    except RuntimeWarning: print("Didn't await")
 
 
 def getRandomDialogue(category):

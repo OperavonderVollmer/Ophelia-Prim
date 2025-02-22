@@ -21,6 +21,7 @@ discordLoop = asyncio.get_event_loop()
 isOnline = False
 
 async def riposteMessage(message, input):
+    powerdown = False
     if not input: print("User message is empty. Probably an intents issue, try to get enable intents")
     if sanitizeText(input) is None: 
         await sendChannel(f"User: {message.author} | Channel: {message.channel}\nMessage: ```{message.content}```\nTimestamp: {message.created_at}", "warningChannel")
@@ -40,7 +41,7 @@ async def riposteMessage(message, input):
             await message.author.send(output)
         else:
             await message.channel.send(output)
-    except Exception as e: print(e) 
+    except Exception as e: print(e)
 
 async def sendChannel(output, selectedChannel):
     try:
@@ -75,3 +76,7 @@ def wakeOpheliaDiscord():
     loop.create_task(client.start(discordTokens["discordToken"]))
     return loop
 
+async def stopOpheliaDiscord():
+    global isOnline
+    isOnline = False
+    await client.close()

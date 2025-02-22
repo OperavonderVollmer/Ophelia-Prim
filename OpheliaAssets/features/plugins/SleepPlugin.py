@@ -13,14 +13,15 @@ class plugin(opheliaPlugin):
         output = opheNeu.getRandomDialogue("farewells")
         def sayGoodbye():
             ophePlu.plugins["Transmission"].audioThroughMic(output, True, False)
+            opheNeu.opheliaRequired = False
         opheNeu.thr.Thread(target=sayGoodbye).start()
-        opheNeu.opheliaRequired = False
+        
         return output
 
     def execute(self):
         return self.opheliaSleep()
 
-    def cheatResult(self):
+    def cheatResult(self, t):
         return self.execute()
 def get_plugin():
     return plugin()

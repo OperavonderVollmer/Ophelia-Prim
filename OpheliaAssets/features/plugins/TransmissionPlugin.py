@@ -28,6 +28,8 @@ class plugin(opheliaPlugin):
                     fileName = temp_wav.name
                 opheNeu.engine.save_to_file(text, fileName)
                 opheNeu.engine.runAndWait() 
+                opheNeu.engine.stop()
+                opheNeu.time.sleep(.1)
             else:
                 target = text.replace(" ", "")
                 audioDir = self.getOptions(dir=True)
@@ -53,11 +55,13 @@ class plugin(opheliaPlugin):
 
     def execute(self):
         target = self.prepExecute()
+        print(f"Target: {target}")
         self.audioThroughMic(target[0], isTTS=(target[1] == "say"))
 
     def cheatResult(self, target): 
         isTTS = target.startswith("say")
-        target = target[4:] if isTTS else target[5:]
+        target = target[4:] if isTTS else target[5:] if target.startswith("play") else target
+        print(f"Target: {target}")
         output = self.audioThroughMic(target, isTTS=isTTS)
         if not output: return f"Requested {target} not found, please select one of the following: {', '.join(self.getOptions())}. You can also add new .wav files to the assets/sound_bites folder."
         else: return "556036"
