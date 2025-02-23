@@ -32,3 +32,5 @@ security.log
 OpheliaAssets/.env
 debug.log
 .vscode/settings.json
+/OpheliaAssets/testingScripts
+/Unused

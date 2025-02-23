@@ -87,6 +87,7 @@ def killDiscord ():
         asy.async_to_sync(opheDisc.stopOpheliaDiscord(), discordLoop)
     except RuntimeWarning: print("Didn't await")
 
+
 def getRandomDialogue(category):
     return random.choice(dialogue[category])
 

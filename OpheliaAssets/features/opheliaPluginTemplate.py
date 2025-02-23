@@ -5,7 +5,7 @@ import opheliaNeurals as opheNeu
 #from functions.opheliaDiscord import waitInput
 
 class opheliaPlugin(ABC):
-    def __init__(self, name: str, prompt: str= "", needsArgs: bool = False, modes = []):
+    def __init__(self, name: str, prompt: str= "", needsArgs: bool = False, modes = [], helpText = ""):
         self.name = name
         self.prompt = prompt
         self.needsArgs = needsArgs
@@ -20,7 +20,7 @@ class opheliaPlugin(ABC):
             if self.modes:
                 for mode in self.modes:
                     if target.__contains__(mode): 
-                        find = target.lower().replace(mode, "").replace(" ", "")
+                        find = target.replace(mode, "").replace(" ", "")
                         target = [find, mode]
                         break
                 else: return "Query cancelled"

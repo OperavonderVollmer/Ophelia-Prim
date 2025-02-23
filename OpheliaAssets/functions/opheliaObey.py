@@ -3,12 +3,11 @@ import opheliaPlugins as ophePlu
 import opheliaNeurals as opheNeu
 
 def opheliaDo(command, speechSource=True, isLoud=True):
-    command = command.lower()
     if command.__contains__("command"):
         command = command[8:]
         try:
             for plugin in ophePlu.plugins:
-                if command.__contains__(plugin.lower()):  
+                if command.lower().__contains__(plugin.lower()):  
                     print(f"Command Recognized: {str(plugin)}")
                     command = command.replace(plugin.lower(), "").strip()
 

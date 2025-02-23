@@ -22,7 +22,7 @@ class plugin(opheliaPlugin):
             opheNeu.sd.play(audio, samplerate=sample_rate, device=device)
             opheNeu.sd.wait() 
         try:
-
+            text = text.lower()
             if isTTS:
                 with opheNeu.tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_wav:
                     fileName = temp_wav.name

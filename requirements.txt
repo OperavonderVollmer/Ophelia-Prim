@@ -32,3 +32,5 @@ python-dotenv
 python-freeDictionaryAPI
 
 pandas
+
+pycaw

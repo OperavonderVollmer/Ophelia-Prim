@@ -12,6 +12,7 @@ discordTokens = {
     "logChannel": int(os.getenv("logChannel")),
     "deepLogChannel": int(os.getenv("deepLogChannel")),
     "warningChannel": int(os.getenv("warningChannel")),
+    "musicChannel": int(os.getenv("musicChannel")),
     "authorizedUsers": list(map(int, os.getenv("authorizedUsers", "").split(",")))
 }
 intents = Intents.default()
