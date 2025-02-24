@@ -34,3 +34,4 @@ python-freeDictionaryAPI
 pandas
 
 pycaw
+discord.py[voice]

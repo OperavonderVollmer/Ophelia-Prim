@@ -10,3 +10,10 @@ import opheliaWake as opheWake
 opheWake.opheliaBegin(onStartBool=False, quickstart=True)
 
 #--------------------------------------------------------#
+"""
+opheWake.startDiscord()
+
+while True:
+    var = input("Input: ")
+    print(plugins["Jukebox"].cheatResult(var))
+"""

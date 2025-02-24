@@ -1,10 +1,12 @@
 import os, asyncio
 from dotenv import load_dotenv
 from discord import Intents, Client, Message
+import discord
 from functions import opheliaObey
 from functions.sanitize import sanitizeText
 import opheliaDialogue as opheDia
 import random
+import yt_dlp
 
 load_dotenv()
 discordTokens = {
@@ -13,6 +15,8 @@ discordTokens = {
     "deepLogChannel": int(os.getenv("deepLogChannel")),
     "warningChannel": int(os.getenv("warningChannel")),
     "musicChannel": int(os.getenv("musicChannel")),
+    "voiceChannel": int(os.getenv("voiceChannel")),
+    "guildID": int(os.getenv("guildId")),
     "authorizedUsers": list(map(int, os.getenv("authorizedUsers", "").split(",")))
 }
 intents = Intents.default()
@@ -53,12 +57,62 @@ async def sendChannel(output, selectedChannel):
         else: print("Channel not found")
     except Exception as e: print(e)
 
+voice_client = None
+
+async def join_voice_channel(channel_id):
+    global voice_client
+    """Joins a Discord voice channel if not already connected."""
+    if voice_client and voice_client.is_connected():
+        return voice_client  # Already connected
+    
+    guild = client.get_guild(discordTokens["guildID"])
+    if not guild:
+        print("Guild not found")
+        return
+
+    voice_channel = guild.get_channel(channel_id)
+    if voice_channel and isinstance(voice_channel, discord.VoiceChannel):
+        voice_client = await voice_channel.connect()
+        return voice_client
+    else:
+        return None
+
+yt_dl_opts = {'format': 'bestaudio/best'}
+ytdl = yt_dlp.YoutubeDL(yt_dl_opts)
+#ffmpeg_opts = {'options': '-vn'}
+ffmpeg_opts = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+    'options': '-vn -ac 2 -ar 48000 -b:a 256k -bufsize 512k'
+}
+async def startMusicStream(song):
+    voice_client = await join_voice_channel(discordTokens["voiceChannel"])
+    #url = song["url"]
+    url = song
+    try:
+        loop = asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
+        sound = data["url"]
+        player = discord.FFmpegPCMAudio(sound, **ffmpeg_opts)
+        voice_client.play(player)
+    except Exception as e:
+        print(e)
+
+async def pauseMusicStream():
+    voice_client = await join_voice_channel(discordTokens["voiceChannel"])
+    if voice_client:
+        if voice_client.is_paused():
+            voice_client.resume()
+        else:
+            voice_client.pause()
+        
+    return f"Paused: {voice_client.is_paused()} | Playing: {voice_client.is_playing()}"
+
 @client.event
 async def on_ready():
     print("Ophelia is now online on Discord!!")
     global isOnline
     isOnline = True
-
+    
 @client.event
 async def on_message(message):
     if not isOnline: return

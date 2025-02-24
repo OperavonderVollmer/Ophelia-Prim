@@ -8,7 +8,7 @@ import opheliaNeurals as opheNeu
 class plugin(opheliaPlugin):
     def __init__(self):
         super().__init__("Jukebox", "Which jukebox command?", needsArgs=True, modes=[
-            "start", "stop", "pause", "volume", "add", "peep", "next", "previous", "repeat", "shuffle", "linecut", "pulltheplug"
+            "start", "stop", "pause", "volume", "add", "peep", "next", "previous", "repeat", "shuffle", "linecut", "pulltheplug", "discord",
             ])
         self.isRunning = False
         self.isPlaying = False
@@ -19,6 +19,7 @@ class plugin(opheliaPlugin):
         self.jukebox = []
         self.process = None
         self.ffplay_process = None
+        self.isDiscord = False
 
     def getOptions(self, dir=False):
         valid = ["start", "stop", "pause", "next", "previous", "repeat", "shuffle", "pulltheplug"]
@@ -80,6 +81,9 @@ class plugin(opheliaPlugin):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
+
+            if self.isDiscord:
+                opheNeu.playSong(song)
 
             # Start a separate thread to monitor song completion
             threading.Thread(target=_monitorPlayback, args=[newID], daemon=True).start()
@@ -213,8 +217,8 @@ class plugin(opheliaPlugin):
 
         except Exception as e:
             return(f"Error adding playlist: {e}")
-        return('\n'.join(outputMessage) + "\n" +self.peepJukebox())
-
+        if isinstance(outputMessage, list): return('\n'.join(outputMessage) + "\n" +self.peepJukebox())
+        return(outputMessage + "\n" +self.peepJukebox())
 
     def peepJukebox(self, peep:str = None):
         if len(self.jukebox) == 0: return "Jukebox is empty"
@@ -248,7 +252,28 @@ class plugin(opheliaPlugin):
                 return self.playSong(self.jukebox[self.currentSongIndex])
             else: return("Index out of range")
         except (ValueError, TypeError, IndexError):
-            return (f"Index must be an integer between 1 and {len(self.jukebox)}")     
+            return (f"Index must be an integer between 1 and {len(self.jukebox)}") 
+        
+    def songBook(self, t): 
+        searchSong = "ytsearch:" + t.replace(" ", "_")
+        try:
+            result = subprocess.run(
+                ["yt-dlp", "--flat-playlist", "--print", searchSong],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            song = self.getSongInfo(result.stdout.strip())
+            if song:
+                self.jukebox.append(song)
+                return(f"Added '{song['title']}' to jukebox")
+        except Exception as e:
+            return(f"Error adding song: {e}")
+
+    def discordOn(self, t):
+        self.isDiscord = not self.isDiscord
+        print(f"Discord use is now {self.isDiscord}")
+        pass
 
 # voice commands
 # command jukebox control start, stop, stop, pause, volume, next, previous, repeat, shuffle, peep, linecut, pull the plug,
@@ -270,9 +295,12 @@ class plugin(opheliaPlugin):
             "shuffle": self.shuffleCards,
             "peep": self.peepJukebox,
             "linecut": self.lineCut,
-            "add": self.insertCoin
+            "add": self.insertCoin,
+            "pulltheplug": self.pullThePlug,
+            "discord": self.discordOn,
         }
         try:
+            if t[1] == "help": raise Exception
             return controls[t[1]](t[0])
         except Exception as e:
             opheNeu.debug_log(f"Jukebox Error {e}")
@@ -285,13 +313,13 @@ class plugin(opheliaPlugin):
         if "add" in t: return "Add song is not supported for voice commands, please insert using Discord"
         return self.jukeboxControls(t)
 
-    def cheatResult(self, t):
+    def cheatResult(self, t):        
         for mode in self.modes:
             if t.__contains__(mode):
                 t = t.replace(mode, "").replace(" ", "")
                 opheNeu.debug_log(f"Target is '{t}' and mode is '{mode}'")
                 return self.jukeboxControls([t, mode])
-        return "Invalid Command"
+        return self.jukeboxControls([t, "help"])
 
 def get_plugin():
     print("Initializing Jukebox...")

@@ -11,16 +11,17 @@ def onStart():
         opheNeu.sys.exit(0)
     else: pass
 
+def startDiscord():
+    opheDisc.discordLoop = opheDisc.wakeOpheliaDiscord()
+    opheNeu.discordLoop = opheDisc.discordLoop
+    opheNeu.thr.Thread(target=opheDisc.discordLoop.run_forever, daemon=True).start()
+
 def opheliaBegin(onStartBool, quickstart=False, discord=True):
     print("Ophelia Prime Booting...")
     opheBri.bridgeIconStart(opheIcon)
     opheNeu.debug_log("Ophelia Prime Booting...")
-    if onStartBool: 
-        onStart()
-    if discord:
-        opheDisc.discordLoop = opheDisc.wakeOpheliaDiscord()
-        opheNeu.discordLoop = opheDisc.discordLoop
-        opheNeu.thr.Thread(target=opheDisc.discordLoop.run_forever, daemon=True).start()
+    if onStartBool: onStart()
+    if discord: startDiscord()
     if not quickstart:
         opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("greetings"))
         with opheNeu.sr.Microphone(device_index=1) as source:

@@ -2,12 +2,14 @@ import subprocess, time, os, psutil, json, random, threading, uuid
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume, IAudioSessionManager2, IAudioSessionControl
-
+from features.opheliaPluginTemplate import opheliaPlugin
 import opheliaNeurals as opheNeu
 
-class plugin():
+class plugin(opheliaPlugin):
     def __init__(self):
-        self.modes=["start", "stop", "pause", "volume", "add", "peep", "next", "previous", "repeat", "shuffle", "linecut", "pulltheplug"]
+        super().__init__("Jukebox", "Which jukebox command?", needsArgs=True, modes=[
+            "start", "stop", "pause", "volume", "add", "peep", "next", "previous", "repeat", "shuffle", "linecut", "pulltheplug"
+            ])
         self.isRunning = False
         self.isPlaying = False
         self.isRepeat = 0 #isRepeat 0 = no repeat, 1 = repeat playlist, 2 = repeat song 
@@ -17,6 +19,10 @@ class plugin():
         self.jukebox = []
         self.process = None
         self.ffplay_process = None
+
+    def getOptions(self, dir=False):
+        valid = ["start", "stop", "pause", "next", "previous", "repeat", "shuffle", "pulltheplug"]
+        return valid 
 
     def getSongInfo(self, url: str):
         def formatTime(seconds):
@@ -42,7 +48,6 @@ class plugin():
             return None
 
     def playSong(self, song):
-
         def _monitorPlayback(playbackID):
             """Waits for the song to finish playing, then calls nextSong()."""
             try:
@@ -68,8 +73,9 @@ class plugin():
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL
             )
+            '"-volume", str(self.volume),'
             self.ffplay_process = subprocess.Popen(
-                ["ffplay", "-nodisp", "-autoexit", "-volume", str(self.volume), "-"],
+                ["ffplay", "-nodisp", "-autoexit",  "-"],
                 stdin=self.process.stdout,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
@@ -77,8 +83,9 @@ class plugin():
 
             # Start a separate thread to monitor song completion
             threading.Thread(target=_monitorPlayback, args=[newID], daemon=True).start()
-            return"aaaaaaaaaaaa"
-            return(f"Now Playing: {song['title']} by {song['uploader']} ({song['duration']})")
+            o = (f"Playing: {song['title']} by {song['uploader']} ({song['duration']})")
+            #opheNeu.discordLog(o, "musicChannel")
+            return(o)
 
         except FileNotFoundError:
             print("Error: Make sure yt-dlp and ffplay are installed.")
@@ -130,6 +137,7 @@ class plugin():
 
     def volumeControl(self, newVolume: int):
         try:
+            newVolume = int(newVolume)
             if newVolume < 0 or newVolume > 100: raise ValueError
         except (ValueError, TypeError):
             return ("Volume must be an integer between 0 and 100")         
@@ -146,8 +154,7 @@ class plugin():
         except Exception as e:
             return(f"Error adjusting volume: {e}")
 
-    def nextSong(self, t):
-        if not self.isRunning: return ("Jukebox is not playing")
+    def nextSong(self, t=None):
         self.currentSongIndex += 1 
         if self.currentSongIndex >= len(self.jukebox):
             if self.isRepeat == 1:
@@ -158,7 +165,6 @@ class plugin():
         if 0 <= self.currentSongIndex < len(self.jukebox): return self.playSong(self.jukebox[self.currentSongIndex])
     
     def previousSong(self, t):
-        if not self.isRunning: return ("Jukebox is not playing")
         if self.currentSongIndex > 0: self.currentSongIndex -= 1
         if 0 <= self.currentSongIndex < len(self.jukebox): return self.playSong(self.jukebox[self.currentSongIndex])
 
@@ -180,6 +186,7 @@ class plugin():
         """Adds a single video or an entire playlist to the jukebox."""
         
         # Detect if the URL is a playlist
+        url = str(url)
         try:
             result = subprocess.run(
                 ["yt-dlp", "--flat-playlist", "--print", "url", url],
@@ -188,7 +195,7 @@ class plugin():
                 check=True
             )
             video_urls = result.stdout.strip().split("\n")
-            outputMessage = ""
+            outputMessage = []
             if len(video_urls) > 1:
                 print(f"Adding {len(video_urls)} songs from playlist to jukebox...")
                 for video_url in video_urls:
@@ -197,7 +204,7 @@ class plugin():
                         self.jukebox.append(song)
                         o = (f"Added '{song['title']}' to jukebox")
                         print (o)
-                        outputMessage += o
+                        outputMessage.append(o)
             else:
                 song = self.getSongInfo(url)
                 if song:
@@ -206,10 +213,10 @@ class plugin():
 
         except Exception as e:
             return(f"Error adding playlist: {e}")
-        return(f"{outputMessage}\n{self.peepJukebox()}")
+        if isinstance(outputMessage, list): return('\n'.join(outputMessage) + "\n" +self.peepJukebox())
+        return(outputMessage + "\n" +self.peepJukebox())
 
-
-    def peepJukebox(self, peep:str):
+    def peepJukebox(self, peep:str = None):
         if len(self.jukebox) == 0: return "Jukebox is empty"
         peep = []
         for i, song in enumerate(self.jukebox, 0):
@@ -238,10 +245,26 @@ class plugin():
             index = int(index) - 1
             if 0 <= index < len(self.jukebox):
                 self.currentSongIndex = index
-                self.playSong(self.jukebox[self.currentSongIndex])
+                return self.playSong(self.jukebox[self.currentSongIndex])
             else: return("Index out of range")
         except (ValueError, TypeError, IndexError):
-            return (f"Index must be an integer between 1 and {len(self.jukebox)}")     
+            return (f"Index must be an integer between 1 and {len(self.jukebox)}") 
+        
+    def songBook(self, t): 
+        searchSong = "ytsearch:" + t.replace(" ", "_")
+        try:
+            result = subprocess.run(
+                ["yt-dlp", "--flat-playlist", "--print", searchSong],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            song = self.getSongInfo(result.stdout.strip())
+            if song:
+                self.jukebox.append(song)
+                return(f"Added '{song['title']}' to jukebox")
+        except Exception as e:
+            return(f"Error adding song: {e}")
 
 # voice commands
 # command jukebox control start, stop, stop, pause, volume, next, previous, repeat, shuffle, peep, linecut, pull the plug,
@@ -263,15 +286,20 @@ class plugin():
             "shuffle": self.shuffleCards,
             "peep": self.peepJukebox,
             "linecut": self.lineCut,
-            "add": self.insertCoin
+            "add": self.insertCoin,
+            "search": self.songBook,
+            "pulltheplug": self.pullThePlug
         }
         try:
             return controls[t[1]](t[0])
         except Exception as e:
-            print(f"Error executing command: {e}")
+            opheNeu.debug_log(f"Jukebox Error {e}")
+            return(f"Jukebox command not recognized. Available commands: {', '.join(controls.keys())}.")
+
 
     def execute(self):
         t = self.prepExecute()
+        opheNeu.debug_log(f"Target is '{t[1]}' and mode is '{t[0]}'")
         if "add" in t: return "Add song is not supported for voice commands, please insert using Discord"
         return self.jukeboxControls(t)
 
@@ -279,7 +307,7 @@ class plugin():
         for mode in self.modes:
             if t.__contains__(mode):
                 t = t.replace(mode, "").replace(" ", "")
-                print(f"Target is '{t}' and mode is '{mode}'")
+                opheNeu.debug_log(f"Target is '{t}' and mode is '{mode}'")
                 return self.jukeboxControls([t, mode])
         return "Invalid Command"
 
@@ -287,7 +315,3 @@ def get_plugin():
     print("Initializing Jukebox...")
     return plugin()
 
-muse = get_plugin()
-while True:
-    var = input("\nStart, Stop, Pause, Volume, Add, Peep, Next, Previous, Repeat, Shuffle, Linecut, PullThePlug: ")
-    print(muse.cheatResult(var))
