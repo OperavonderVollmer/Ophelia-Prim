@@ -3,9 +3,12 @@ import opheliaNeurals as opheNeu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Transmission", prompt="What would you like Ophelia to say or play?", needsArgs=True, modes=["say", "play"])
+        super().__init__(name="Transmission", prompt="What would you like Ophelia to say or play?", description="Ophelia shall speak Master's message or play the stated sound bite" ,needsArgs=True, modes=["say", "play"])
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
+
+    def getModes(self):
+        return self.modes
 
     def getOptions(self, dir=False):
         root_dir = opheNeu.os.path.dirname(opheNeu.os.path.abspath(__file__)) 
@@ -58,7 +61,7 @@ class plugin(opheliaPlugin):
         print(f"Target: {target}")
         self.audioThroughMic(target[0], isTTS=(target[1] == "say"))
 
-    def cheatResult(self, target): 
+    def cheatResult(self, target, sender=None): 
         isTTS = target.startswith("say")
         target = target[4:] if isTTS else target[5:] if target.startswith("play") else target
         print(f"Target: {target}")

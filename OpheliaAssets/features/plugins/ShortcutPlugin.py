@@ -3,7 +3,7 @@ import opheliaNeurals as opheNeu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__("Shortcut", "What app would you like Ophelia to open?", needsArgs=True)
+        super().__init__("Shortcut", "What app would you like Ophelia to open?", operaOnly=True, description="Ophelia shall open a shortcut in the shortcut folder",needsArgs=True)
         
 
     def getOptions(self, dir=False):
@@ -35,7 +35,7 @@ class plugin(opheliaPlugin):
         target = self.prepExecute()
         self.openApp(target)
     # target
-    def cheatResult(self, target): 
+    def cheatResult(self, target, sender=None): 
         return self.openApp(target)
 
 def get_plugin():

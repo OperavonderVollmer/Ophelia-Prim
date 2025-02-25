@@ -4,7 +4,7 @@ from functions.sanitize import sanitizeText
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Operate", prompt="Which command would you like to execute? Currently, only shutdown is supported", needsArgs=True)
+        super().__init__(name="Operate", prompt="Which command would you like to execute?", description="Remotely control Ophelia. Authorized Users only", needsArgs=True, operaOnly=True)
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead 
 
@@ -39,7 +39,7 @@ class plugin(opheliaPlugin):
         return self.operate(target)
 
 
-    def cheatResult(self, target):
+    def cheatResult(self, target, sender=None):
         target = target.replace(" ", "")
         return self.operate(target)
 

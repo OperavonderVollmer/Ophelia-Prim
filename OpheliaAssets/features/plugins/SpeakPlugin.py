@@ -3,7 +3,7 @@ import opheliaNeurals as opheNeu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Speak", prompt="Which category would you like Ophelia to speak from?", needsArgs=True, modes=False)
+        super().__init__(name="Speak", prompt="Which category would you like Ophelia to speak from?", description= "Ophelia shall speak a random voice line", needsArgs=True, modes=False, operaOnly=True)
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
     def getDialogue(self, t="general"):
@@ -15,7 +15,7 @@ class plugin(opheliaPlugin):
         target = self.prepExecute()
         return self.getDialogue(target)
 
-    def cheatResult(self, target):
+    def cheatResult(self, target, sender=None):
         return self.getDialogue(target)
     
 def get_plugin():

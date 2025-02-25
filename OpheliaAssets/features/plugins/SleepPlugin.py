@@ -4,7 +4,7 @@ import opheliaPlugins as ophePlu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Sleep")
+        super().__init__(name="Sleep", description="Ophelia shall power down")
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
 
@@ -22,7 +22,7 @@ class plugin(opheliaPlugin):
     def execute(self):
         return self.opheliaSleep()
 
-    def cheatResult(self, t):
+    def cheatResult(self, t, sender=None):
         return self.execute()
 def get_plugin():
     return plugin()

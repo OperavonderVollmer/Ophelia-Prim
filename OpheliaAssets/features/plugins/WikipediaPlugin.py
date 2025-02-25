@@ -3,7 +3,7 @@ import opheliaNeurals as opheNeu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Wikipedia", prompt="What would you like Ophelia to look up?", needsArgs=True, modes=False)
+        super().__init__(name="Wikipedia", prompt="What would you like Ophelia to look up?", description="Ophelia shall read out a wikipedia article for Master", needsArgs=True, modes=False)
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
 
@@ -44,7 +44,7 @@ class plugin(opheliaPlugin):
         target = self.prepExecute()        
         return self.getWikipediaSummary(target)
     
-    def cheatResult(self, target):
+    def cheatResult(self, target, sender=None):
         return self.getWikipediaSummary(target)
 
 def get_plugin():

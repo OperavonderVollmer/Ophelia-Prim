@@ -2,11 +2,14 @@ import os, asyncio
 from dotenv import load_dotenv
 from discord import Intents, Client, Message
 import discord
+from discord.ext import commands
 from functions import opheliaObey
 from functions.sanitize import sanitizeText
 import opheliaDialogue as opheDia
 import random
 import yt_dlp
+import datetime
+from functions.opheliaDiscordCommands import setupCommands
 
 load_dotenv()
 discordTokens = {
@@ -22,11 +25,44 @@ discordTokens = {
 intents = Intents.default()
 intents.message_content = True #NOQA
 client = Client(intents=intents)
+tree = discord.app_commands.CommandTree(client)
 discordLoop = asyncio.get_event_loop()
 isOnline = False
 
-async def riposteMessage(message, input):
-    powerdown = False
+@client.event
+async def on_ready():
+    print(setupCommands(tree))
+    global isOnline
+    isOnline = True
+    print(discordTokens["authorizedUsers"])
+    """try:
+        synced = await tree.sync()  # Attempt to sync commands
+        print(f"Synced {len(synced)} commands successfully!")
+    except Exception as e:
+        print(f"Failed to sync commands: {e}")"""
+    print("Ophelia is now online on Discord!!")
+    
+@client.event
+async def on_message(message):
+    if not isOnline: return
+    if message.author == client.user: return
+    await riposteMessage(message)
+
+def wakeOpheliaDiscord():
+    print("Starting Ophelia on Discord...")
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(discordLoop)
+    loop.create_task(client.start(discordTokens["discordToken"]))
+    return loop
+
+async def stopOpheliaDiscord():
+    global isOnline
+    isOnline = False
+    await client.close()
+
+
+async def riposteMessage(message):
+    input = message.content
     if not input: print("User message is empty. Probably an intents issue, try to get enable intents")
     if sanitizeText(input) is None: 
         await sendChannel(f"User: {message.author} | Channel: {message.channel}\nMessage: ```{message.content}```\nTimestamp: {message.created_at}", "warningChannel")
@@ -48,6 +84,10 @@ async def riposteMessage(message, input):
             await message.channel.send(output)
     except Exception as e: print(e)
 
+async def sendMessage(output, destination):
+
+    pass
+
 async def sendChannel(output, selectedChannel):
     try:
         if not isOnline: return
@@ -56,8 +96,6 @@ async def sendChannel(output, selectedChannel):
         if channel is not None: await channel.send(output)
         else: print("Channel not found")
     except Exception as e: print(e)
-
-voice_client = None
 
 async def join_voice_channel(channel_id):
     global voice_client
@@ -77,60 +115,10 @@ async def join_voice_channel(channel_id):
     else:
         return None
 
-yt_dl_opts = {'format': 'bestaudio/best'}
-ytdl = yt_dlp.YoutubeDL(yt_dl_opts)
-#ffmpeg_opts = {'options': '-vn'}
-ffmpeg_opts = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn -ac 2 -ar 48000 -b:a 256k -bufsize 512k'
-}
-async def startMusicStream(song):
-    voice_client = await join_voice_channel(discordTokens["voiceChannel"])
-    #url = song["url"]
-    url = song
-    try:
-        loop = asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
-        sound = data["url"]
-        player = discord.FFmpegPCMAudio(sound, **ffmpeg_opts)
-        voice_client.play(player)
-    except Exception as e:
-        print(e)
 
-async def pauseMusicStream():
+
+
+async def leaveVoiceChannel():
     voice_client = await join_voice_channel(discordTokens["voiceChannel"])
     if voice_client:
-        if voice_client.is_paused():
-            voice_client.resume()
-        else:
-            voice_client.pause()
-        
-    return f"Paused: {voice_client.is_paused()} | Playing: {voice_client.is_playing()}"
-
-@client.event
-async def on_ready():
-    print("Ophelia is now online on Discord!!")
-    global isOnline
-    isOnline = True
-    
-@client.event
-async def on_message(message):
-    if not isOnline: return
-    if message.author == client.user: return
-    username = str(message.author)
-    messageContent = str(message.content)
-    channel = str(message.channel)
-    #print(f"{username} said: '{messageContent}' ({channel})")
-    await riposteMessage(message, messageContent)
-
-def wakeOpheliaDiscord():
-    print("Starting Ophelia on Discord...")
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(discordLoop)
-    loop.create_task(client.start(discordTokens["discordToken"]))
-    return loop
-
-async def stopOpheliaDiscord():
-    global isOnline
-    isOnline = False
-    await client.close()
+        await voice_client.disconnect()

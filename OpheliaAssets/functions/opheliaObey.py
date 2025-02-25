@@ -3,14 +3,14 @@ import opheliaPlugins as ophePlu
 import opheliaNeurals as opheNeu
 
 def opheliaDo(command, speechSource=True, isLoud=True):
-    if command.__contains__("command"):
+    if command.__contains__("command") or not speechSource:
         command = command[8:]
         try:
             for plugin in ophePlu.plugins:
                 if command.lower().__contains__(plugin.lower()):  
+                    
                     print(f"Command Recognized: {str(plugin)}")
                     command = command.replace(plugin.lower(), "").strip()
-
                     output = ophePlu.plugins[plugin].cheatResult(command) if not speechSource else ophePlu.plugins[plugin].execute()
 
                     if output and isLoud and output != "556036":

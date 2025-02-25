@@ -5,13 +5,22 @@ import opheliaNeurals as opheNeu
 #from functions.opheliaDiscord import waitInput
 
 class opheliaPlugin(ABC):
-    def __init__(self, name: str, prompt: str= "", needsArgs: bool = False, modes = [], helpText = ""):
+    def __init__(self, name: str, prompt: str= "", description: str="", needsArgs: bool = False, modes = [], helpText = "", operaOnly: bool = False):
         self.name = name
+        self.desc = description
         self.prompt = prompt
         self.needsArgs = needsArgs
         self.modes = modes
-        pass
+        self.helpText = helpText
+        self.operaOnly = operaOnly
+        
     def getName(self): return self.name
+    def getDesc(self): return self.desc
+    def getPrompt(self): return self.prompt
+    def getOperaOnly(self): return self.operaOnly
+    def getHelpText(self): return self.helpText
+    def getNeedsArgs(self): return self.needsArgs
+
     def prepExecute(self):
         if self.prompt != "": opheliaSpeak(self.prompt)
 # only has a return if needsArgs

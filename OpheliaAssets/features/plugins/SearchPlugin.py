@@ -7,7 +7,7 @@ import opheliaPlugins as ophePlu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Search", prompt="What would you like Ophelia to search for?", needsArgs=True, modes=False)
+        super().__init__(name="Search", prompt="What would you like Ophelia to search for?", description="Ophelia shall provide you with the results and links to your query", needsArgs=True, modes=False)
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
 
@@ -90,7 +90,7 @@ class plugin(opheliaPlugin):
         t = self.prepExecute()
         return self.googleSearch(t)
 
-    def cheatResult(self, target):
+    def cheatResult(self, target, sender=None):
         return self.googleSearch(target, isCheat=True)
 
 def get_plugin():

@@ -3,7 +3,7 @@ import opheliaNeurals as opheNeu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Weather")
+        super().__init__(name="Weather", description="Ophelia shall provide you a rundown of the weather")
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
 
@@ -42,7 +42,7 @@ class plugin(opheliaPlugin):
     def execute(self, showLogs=True):
         return self.getWeather(showLogs)
 
-    def cheatResult(self, showLogs=True):
+    def cheatResult(self, showLogs=True, sender=None):
         return self.execute(showLogs)
 def get_plugin():
     return plugin()

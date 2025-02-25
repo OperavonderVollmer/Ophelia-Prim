@@ -4,10 +4,11 @@ from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume, IAudioSessionManager2, IAudioSessionControl
 from features.opheliaPluginTemplate import opheliaPlugin
 import opheliaNeurals as opheNeu
+from functions.opheliaAsync import async_to_sync, async_to_sync_params
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__("Jukebox", "Which jukebox command?", needsArgs=True, modes=[
+        super().__init__("Jukebox", "Which jukebox command?", description="Ophelia will play music for Master", needsArgs=True, modes=[
             "start", "stop", "pause", "volume", "add", "peep", "next", "previous", "repeat", "shuffle", "linecut", "pulltheplug", "discord",
             ])
         self.isRunning = False
@@ -21,6 +22,9 @@ class plugin(opheliaPlugin):
         self.ffplay_process = None
         self.isDiscord = False
 
+    def getModes(self):
+        return self.modes
+    
     def getOptions(self, dir=False):
         valid = ["start", "stop", "pause", "next", "previous", "repeat", "shuffle", "pulltheplug"]
         return valid 
@@ -49,6 +53,11 @@ class plugin(opheliaPlugin):
             return None
 
     def playSong(self, song):
+        o = (f"Playing: {song['title']} by {song['uploader']} ({song['duration']})")
+        if self.isDiscord: 
+            from functions.opheliaDiscord import sendChannel
+            from functions.opheliaDiscordJukebox import startMusicStream
+            return o
         def _monitorPlayback(playbackID):
             """Waits for the song to finish playing, then calls nextSong()."""
             try:
@@ -82,13 +91,8 @@ class plugin(opheliaPlugin):
                 stderr=subprocess.DEVNULL
             )
 
-            if self.isDiscord:
-                opheNeu.playSong(song)
-
             # Start a separate thread to monitor song completion
             threading.Thread(target=_monitorPlayback, args=[newID], daemon=True).start()
-            o = (f"Playing: {song['title']} by {song['uploader']} ({song['duration']})")
-            #opheNeu.discordLog(o, "musicChannel")
             return(o)
 
         except FileNotFoundError:
@@ -272,7 +276,7 @@ class plugin(opheliaPlugin):
 
     def discordOn(self, t):
         self.isDiscord = not self.isDiscord
-        print(f"Discord use is now {self.isDiscord}")
+        return (f"Discord use is now {self.isDiscord}")
         pass
 
 # voice commands
@@ -313,7 +317,7 @@ class plugin(opheliaPlugin):
         if "add" in t: return "Add song is not supported for voice commands, please insert using Discord"
         return self.jukeboxControls(t)
 
-    def cheatResult(self, t):        
+    def cheatResult(self, t, sender=None):        
         for mode in self.modes:
             if t.__contains__(mode):
                 t = t.replace(mode, "").replace(" ", "")

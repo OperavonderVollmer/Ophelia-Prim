@@ -3,7 +3,7 @@ import opheliaNeurals as opheNeu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__("Stats")
+        super().__init__("Stats", description="Ophelia shall provide system stats", operaOnly=True)
 
     def execute(self):
         cpu_usage = opheNeu.psutil.cpu_percent(interval=1)
@@ -18,7 +18,7 @@ class plugin(opheliaPlugin):
         print(text)
         return text
 
-    def cheatResult(self, t):
+    def cheatResult(self, t, sender=None):
         return self.execute()
 
 def get_plugin():

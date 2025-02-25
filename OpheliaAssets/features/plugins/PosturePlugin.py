@@ -4,7 +4,7 @@ import opheliaPlugins as ophePlu
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Posture", prompt="How many minutes would you like Ophelia to check your posture? Say 0 or False to deactivate", needsArgs=True)
+        super().__init__(name="Posture", prompt="How many minutes would you like Ophelia to check your posture? Say 0 or False to deactivate", description="Ophelia shall give Master a posture check", needsArgs=True, operaOnly=True)
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
     def postureCheckSetup(self, t):
@@ -70,7 +70,7 @@ class plugin(opheliaPlugin):
         return self.postureCheckSetup(target)
 
                 #command = number of seconds
-    def cheatResult(self, command):
+    def cheatResult(self, command, sender=None):
         return self.postureCheckSetup(command)
     
 def get_plugin():

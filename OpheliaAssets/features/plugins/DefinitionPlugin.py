@@ -4,7 +4,7 @@ from freedictionaryapi.clients.sync_client import DictionaryApiClient
 
 class plugin(opheliaPlugin):
     def __init__(self):
-        super().__init__(name="Definition", prompt="What word would you like Ophelia to look up?", needsArgs=True, modes=False)
+        super().__init__(name="Definition", description= "Ophelia will provide a definition for the provided word", prompt="What word would you like Ophelia to look up?", needsArgs=True, modes=False)
 
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead
 
@@ -32,7 +32,7 @@ class plugin(opheliaPlugin):
         t = self.prepExecute()
         return self.getDefinition(t)
 
-    def cheatResult(self, target):
+    def cheatResult(self, target, sender=None):
         return self.getDefinition(target)
 
 def get_plugin():
