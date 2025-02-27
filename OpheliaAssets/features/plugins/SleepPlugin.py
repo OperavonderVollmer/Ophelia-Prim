@@ -22,7 +22,7 @@ class plugin(opheliaPlugin):
     def execute(self):
         return self.opheliaSleep()
 
-    def cheatResult(self, t, sender=None):
+    def cheatResult(self, **kwargs):
         return self.execute()
 def get_plugin():
     return plugin()

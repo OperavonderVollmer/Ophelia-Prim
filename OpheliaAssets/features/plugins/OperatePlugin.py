@@ -39,8 +39,8 @@ class plugin(opheliaPlugin):
         return self.operate(target)
 
 
-    def cheatResult(self, target, sender=None):
-        target = target.replace(" ", "")
+    def cheatResult(self, **kwargs):
+        target = kwargs["command"].replace(" ", "")
         return self.operate(target)
 
 def get_plugin():

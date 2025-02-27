@@ -20,44 +20,61 @@ ffmpeg_opts = {
         "itself": act
     }"""
 
+
 # "song": url to song
 # "senderInfo": sender info
 async def startMusicStream(**kwargs):
-    from functions.opheliaDiscord import join_voice_channel, discordLoop
-    voice_client = await join_voice_channel(kwargs["senderInfo"]["vcChannel"])
+    print("AWOOOOOOOOOOOOOOOOOOOOO")
+    from functions.opheliaDiscord import join_voice_channel, discordLoop, sendChannel
+    senderInfo = kwargs.get("senderInfo", None)
+    print("GETTING VOICE CLIENT")
+    voice_client = await join_voice_channel(senderInfo = senderInfo)
+    print(f"Voice Client: {voice_client}")
     url = kwargs["song"]
     if voice_client.is_playing(): voice_client.stop()
     try:
         data = await discordLoop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
         sound = data["url"]
         player = discord.FFmpegPCMAudio(sound, **ffmpeg_opts)
-        voice_client.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(handleSongEnd(), discordLoop))
-        return [True, "Now playing: " + data["title"]]
+        voice_client.play(player, after=lambda e: handleSongEnd(senderInfo = senderInfo))        
+        output = f"{kwargs['outputMessage']} | User: {senderInfo['name']} | User ID: {senderInfo['id']} | Server: {senderInfo['guild']} | Server ID: {senderInfo['guild'].id}"
+        await sendChannel(output, "musicChannel")
     except Exception as e:
-        return [False, e]
+        print(e)
 
-async def handleSongEnd(song):
+def handleSongEnd(senderInfo):
     from functions.opheliaDiscord import sendChannel
-    await sendChannel(f"{song} has finished playing", "musicChannel")
-    pass
+    from opheliaPlugins import plugins
+    import threading, time
+    print("handleSongEnd -> Triggering nextSong() asynchronously")
+    def nextSong():
+        plugins["Jukebox"].nextSong(senderInfo = senderInfo, end=True)
+        print("OWARIDA OWARIDA OWARIDA IM GOING BRAZY AAAAAAAAAAAAAAAAA")
+    s = threading.Thread(target=nextSong)
+    s.start()
+    print("handleSongEnd -> Exiting function (nextSong() is running in the background)")
+    return
 
-async def pauseMusicStream():
-    from functions.opheliaDiscord import join_voice_channel, discordTokens
-    voice_client = await join_voice_channel(discordTokens["voiceChannel"])
+async def pauseMusicStream(**kwargs):
+    from functions.opheliaDiscord import join_voice_channel
+    from functions.opheliaDiscord import join_voice_channel, sendChannel
+    senderInfo = kwargs["senderInfo"]
+    voice_client = await join_voice_channel(senderInfo = senderInfo)
     if voice_client:
         if voice_client.is_paused():
             voice_client.resume()
         else:
             voice_client.pause()        
-    return f"Paused: {voice_client.is_paused()} | Playing: {voice_client.is_playing()}"
-
-async def stopMusicStream():
-    from functions.opheliaDiscord import join_voice_channel, discordTokens
-    voice_client = await join_voice_channel(discordTokens["voiceChannel"])
+    output = f"Paused: {voice_client.is_paused()} | User: {senderInfo['name']} | User ID: {senderInfo['id']} | Server: {senderInfo['guild']} | Server ID: {senderInfo['guild'].id}"
+    await sendChannel(output, "musicChannel")
+    return
+async def stopMusicStream(**kwargs):
+    from functions.opheliaDiscord import join_voice_channel
+    from functions.opheliaDiscord import join_voice_channel, sendChannel
+    senderInfo = kwargs["senderInfo"]
+    voice_client = await join_voice_channel(senderInfo = senderInfo)
     if voice_client:
         voice_client.stop()
-    return f"Stopped: {voice_client.is_playing()}"
+    output = f"Playing: {voice_client.is_playing()} | User: {senderInfo['name']} | User ID: {senderInfo['id']} | Server: {senderInfo['guild']} | Server ID: {senderInfo['guild'].id}"
+    await sendChannel(output, "musicChannel")
 
-async def skipMusicStream():
-    raise NotImplementedError
-    pass

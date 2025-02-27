@@ -44,8 +44,8 @@ class plugin(opheliaPlugin):
         target = self.prepExecute()        
         return self.getWikipediaSummary(target)
     
-    def cheatResult(self, target, sender=None):
-        return self.getWikipediaSummary(target)
+    def cheatResult(self, **kwargs):
+        return self.getWikipediaSummary(kwargs["command"])
 
 def get_plugin():
     return plugin()

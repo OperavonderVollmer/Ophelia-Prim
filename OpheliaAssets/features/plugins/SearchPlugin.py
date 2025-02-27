@@ -90,8 +90,8 @@ class plugin(opheliaPlugin):
         t = self.prepExecute()
         return self.googleSearch(t)
 
-    def cheatResult(self, target, sender=None):
-        return self.googleSearch(target, isCheat=True)
+    def cheatResult(self, **kwargs):
+        return self.googleSearch(kwargs["command"], isCheat=True)
 
 def get_plugin():
     return plugin()

@@ -34,7 +34,6 @@ async def on_ready():
     print(setupCommands(tree))
     global isOnline
     isOnline = True
-    print(discordTokens["authorizedUsers"])
     """try:
         synced = await tree.sync()  # Attempt to sync commands
         print(f"Synced {len(synced)} commands successfully!")
@@ -97,28 +96,24 @@ async def sendChannel(output, selectedChannel):
         else: print("Channel not found")
     except Exception as e: print(e)
 
-async def join_voice_channel(channel_id):
-    global voice_client
-    """Joins a Discord voice channel if not already connected."""
-    if voice_client and voice_client.is_connected():
-        return voice_client  # Already connected
-    
-    guild = client.get_guild(discordTokens["guildID"])
-    if not guild:
-        print("Guild not found")
-        return
-
-    voice_channel = guild.get_channel(channel_id)
-    if voice_channel and isinstance(voice_channel, discord.VoiceChannel):
-        voice_client = await voice_channel.connect()
-        return voice_client
-    else:
-        return None
-
-
+async def join_voice_channel(**kwargs):
+    senderInfo = kwargs["senderInfo"]
+    channel = senderInfo["vcChannel"]
+    voiceClient = discord.utils.get(client.voice_clients, guild=senderInfo["guild"])
+    print(f"VOICE CLIENT = {voiceClient}")
+    if voiceClient and voiceClient.is_connected():
+        if voiceClient.channel == channel: 
+            print("ITS THE SAME VOICE CLIENT")
+            return voiceClient 
+        print("""ITS NOT THE SAME VOICE CLIENT""")
+        await voiceClient.move_to(channel)
+        return voiceClient    
+    print("BOT NOT IN VOICE CHANNEL")
+    return await channel.connect()
 
 
 async def leaveVoiceChannel():
+
     voice_client = await join_voice_channel(discordTokens["voiceChannel"])
     if voice_client:
         await voice_client.disconnect()

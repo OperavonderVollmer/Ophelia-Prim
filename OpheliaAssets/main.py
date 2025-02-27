@@ -1,6 +1,6 @@
 import opheliaWake as opheWake
 #import opheliaBridge as opheBri
-from opheliaPlugins import plugins, getPluginsKeys
+#from opheliaPlugins import plugins
 
 
 #--------------------------------------------------------#
@@ -12,6 +12,7 @@ from opheliaPlugins import plugins, getPluginsKeys
 #--------------------------------------------------------#
 
 opheWake.startDiscord()
+
 
 
 import time

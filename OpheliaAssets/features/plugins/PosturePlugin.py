@@ -70,8 +70,8 @@ class plugin(opheliaPlugin):
         return self.postureCheckSetup(target)
 
                 #command = number of seconds
-    def cheatResult(self, command, sender=None):
-        return self.postureCheckSetup(command)
+    def cheatResult(self, **kwargs):
+        return self.postureCheckSetup(kwargs["command"])
     
 def get_plugin():
     return plugin()

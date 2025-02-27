@@ -61,7 +61,8 @@ class plugin(opheliaPlugin):
         print(f"Target: {target}")
         self.audioThroughMic(target[0], isTTS=(target[1] == "say"))
 
-    def cheatResult(self, target, sender=None): 
+    def cheatResult(self, **kwargs): 
+        target = kwargs["command"]
         isTTS = target.startswith("say")
         target = target[4:] if isTTS else target[5:] if target.startswith("play") else target
         print(f"Target: {target}")

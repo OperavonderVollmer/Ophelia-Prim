@@ -9,9 +9,9 @@ def runPlugin(command_name: str, mode: str = "", args: str = "", act: discord.In
     senderInfo = {
         "name": act.user.name,
         "id": act.user.id,
-        "voiceClients": act.client.voice_clients,
-        "vcChannel": act.user.voice.channel if act.user.voice else None,
         "guild": act.guild,  # will return None if sent from DM
+        "voiceClients": discord.utils.get(act.client.voice_clients, guild=act.guild),
+        "vcChannel": act.user.voice.channel if act.user.voice else None,
         "discriminator": act.user.discriminator,
         "itself": act
     }
@@ -25,7 +25,7 @@ def runPlugin(command_name: str, mode: str = "", args: str = "", act: discord.In
     if sanitizeText(command) == None: 
         sendChannel(f"User: {senderInfo['name']} | Channel: {senderInfo['guild']}\nMessage: ```{command}```\nTimestamp: {senderInfo['itself'].created_at}", "warningChannel")
         return
-    resp = plugins[comm].cheatResult(command, senderInfo)
+    resp = plugins[comm].cheatResult(command = command, senderInfo = senderInfo)
     if resp == "556036": return "Execution finished successfully"
     print(f"response: {resp}")
     return resp
@@ -49,17 +49,16 @@ def setupCommands(tree):
         if not target.getNeedsArgs():
             def create_command_callback(command_name):
                 async def command_callback(act: discord.Interaction):
-                    await act.response.defer()
-                    response = runPlugin(command_name=command_name, act=act)
-                    await act.followup.send(f"Command: {command_name}\nResponse: \n```\n{response}\n```")
+                    await act.response.defer(ephemeral=True)
+                    res = runPlugin(command_name=command_name, act=act)
+                    await act.followup.send(res)
                 return command_callback
-
             tree.command(name=command_name, description=command_desc)(create_command_callback(command_name))
 
         elif not hasattr(target, "getModes"):
             def create_command_callback(command_name):
                 async def command_callback(act: discord.Interaction, args:str = ""):
-                    await act.response.defer()
+                    await act.response.defer(ephemeral=True)
                     res = runPlugin(command_name=command_name, args=args, act=act)
                     await act.followup.send(res)
                 return command_callback
@@ -68,7 +67,7 @@ def setupCommands(tree):
         elif hasattr(target, "getModes"):
             def create_command_callback(command_name):
                 async def command_callback(act: discord.Interaction, mode: str, args:str = ""):
-                    await act.response.defer()
+                    await act.response.defer(ephemeral=True)
                     res = runPlugin(command_name=command_name, mode=mode, args=args, act=act)
                     await act.followup.send(res)
                 return command_callback

@@ -42,8 +42,9 @@ class plugin(opheliaPlugin):
     def execute(self, showLogs=True):
         return self.getWeather(showLogs)
 
-    def cheatResult(self, showLogs=True, sender=None):
-        return self.execute(showLogs)
+    def cheatResult(self, **kwargs):
+        #city = kwargs["command"].replace(" ", "")
+        return self.execute()
 def get_plugin():
     return plugin()
 
