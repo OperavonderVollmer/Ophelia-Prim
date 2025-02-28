@@ -13,7 +13,7 @@ class plugin(opheliaPlugin):
             ])
         self.isRunning = False
         self.isPlaying = False
-        self.isRepeat = 0 #isRepeat 0 = no repeat, 1 = repeat playlist, 2 = repeat song 
+        self.isRepeat = 0                   #   isRepeat 0 = no repeat, 1 = repeat playlist, 2 = repeat song 
         self.currentSongIndex = 0
         self.currentPlaybackID = None
         self.volume = 100
