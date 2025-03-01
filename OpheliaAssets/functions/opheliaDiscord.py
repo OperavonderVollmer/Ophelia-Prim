@@ -45,7 +45,7 @@ async def on_ready():
 async def on_message(message):
     if not isOnline: return
     if message.author == client.user: return
-    await riposteMessage(message)
+    #await riposteMessage(message)
 
 def wakeOpheliaDiscord():
     print("Starting Ophelia on Discord...")

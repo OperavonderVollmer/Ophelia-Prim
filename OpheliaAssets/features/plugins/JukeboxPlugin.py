@@ -20,7 +20,7 @@ class plugin(opheliaPlugin):
         self.jukebox = {}
         self.process = None
         self.ffplay_process = None
-        self.isDiscord = True
+        self.isDiscord = False
 
     def getModes(self):
         return self.modes
@@ -105,15 +105,16 @@ class plugin(opheliaPlugin):
             """Waits for the song to finish playing, then calls nextSong()."""
             try:
                 while self.ffplay_process.poll() is None:
-                    if not self.isRunning: return
+                    if not self.jukebox[senderInfo["guild"]]["isRunning"]: return
                     if playbackID != self.currentPlaybackID: return
                     time.sleep(1)
                 if playbackID == self.currentPlaybackID:
+                    print("Song finished")
                     self.nextSong(senderInfo=senderInfo)
             except AttributeError: print("Song stopped.")
         jukebox = self.getServersPlaylist(senderInfo["guild"])
         if not jukebox["isRunning"]: return ("The jukebox isn't running.")
-        if jukebox["isPlaying"]: self.stopSong(command=False)
+        if jukebox["isPlaying"]: self.stopSong(command=False, senderInfo=senderInfo)
         try:
             print("Trying to play song")
             jukebox["isPlaying"] = True
@@ -220,11 +221,11 @@ class plugin(opheliaPlugin):
         jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
         print("Playing next song...")
         if not jukebox["playlist"]: return("Jukebox is empty")
-        jukebox["index"] += 1
+        jukebox["index"] += 1 if jukebox["isRepeat"] != 2 else 0
         if jukebox["index"] >= len(jukebox["playlist"]):
             if jukebox["isRepeat"] == 1:
                 jukebox["index"] = 0
-            elif jukebox["isRepeat"] == 0:
+            else:
                 self.stopSong(command=True, senderInfo = kwargs.get("senderInfo", None))
                 return  ("Reached the end of the playlist")
         if 0 <= jukebox["index"] < len(jukebox["playlist"]):
@@ -259,53 +260,39 @@ class plugin(opheliaPlugin):
 
 
     def insertCoin(self, **kwargs):
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
-        url = str(kwargs["command"]).strip()
+        """Adds a single video or an entire playlist to the jukebox."""
         
+        guild = kwargs["senderInfo"]["guild"]
+        jukebox = self.getServersPlaylist(guild)
+        # Detect if the URL is a playlist
+        url = str(kwargs["command"])
         print(f"Adding {url} to jukebox...")
-
         try:
-            # Check if it's a playlist or a single video
             result = subprocess.run(
-                ["yt-dlp", "--print", "%(playlist_count)s", url],
+                ["yt-dlp", "--flat-playlist", "--print", "url", url],
                 capture_output=True,
                 text=True,
                 check=True
             )
-            
-            if result.stdout.strip().isdigit() and int(result.stdout.strip()) > 1:
-                # This means it's a playlist
-                result = subprocess.run(
-                    ["yt-dlp", "--flat-playlist", "--print", "url", url],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-                video_urls = result.stdout.strip().split("\n")
+            video_urls = result.stdout.strip().split("\n")
+            outputMessage = []
+            if len(video_urls) > 1:
+                print(f"Adding {len(video_urls)} songs from playlist to jukebox...")
+                for video_url in video_urls:
+                    song = self.getSongInfo(video_url)
+                    if song:
+                        jukebox["playlist"].append(song)
+                        print (f"Added '{song['title']}' to jukebox")
             else:
-                # Single video
-                video_urls = [url]
-
-            # Limit concurrent downloads
-            max_threads = 3  
-            with ThreadPoolExecutor(max_workers=max_threads) as executor:
-                futures = {executor.submit(self.getSongInfo, video_url, kwargs["senderInfo"]["guild"]): video_url for video_url in video_urls}
-
-                for future in as_completed(futures):
-                    try:
-                        future.result()  # Wait for each task to complete
-                    except Exception as e:
-                        print(f"Error fetching video info: {e}")
-
-            print("All songs have been added to the jukebox.")
-            self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
+                song = self.getSongInfo(url)
+                if song:
+                    jukebox["playlist"].append(song)
+                    print (f"Added '{song['title']}' to jukebox")
 
         except Exception as e:
-            return f"Error adding song/playlist. Please check if the video is age-restricted.\nError: {e}"
-
-        return self.peepJukebox(senderInfo=kwargs["senderInfo"])
-
+            return(f"Error adding playlist: {e}")
+        self.jukebox[guild] = jukebox
+        return self.peepJukebox(senderInfo = kwargs["senderInfo"])
 
 
     def peepJukebox(self, **kwargs):
@@ -415,6 +402,7 @@ class plugin(opheliaPlugin):
                 t = t.replace(mode, "").replace(" ", "")
                 opheNeu.debug_log(f"Target is '{t}' and mode is '{mode}'")
                 res = self.jukeboxControls(command = t, mode = mode, senderInfo = senderInfo)
+                if hasattr(kwargs, "isTray"): print(res)
                 return res
         return self.jukeboxControls([t, "help"])
 
