@@ -27,9 +27,10 @@ def getIcon(commandMap=ophePlu.plugins):
     
     def hasOptions(key):
         def onClicked(icon, item):
-            item = str(item).replace(" Options", "")
+            item = str(item).replace(" Options", "").lower()
             # directly calls a plugin's cheatResult, bypassing the need for a spoken command
-            ophePlu.plugins[key].cheatResult(f"{item}")
+            print(f"Calling {item}...")
+            ophePlu.plugins[key].cheatResult(command = f"{item}", senderInfo=None)
         options = ophePlu.plugins[key].getOptions()
         return pystray.Menu(
             *[pystray.MenuItem(key.capitalize(), onClicked) for key in options]

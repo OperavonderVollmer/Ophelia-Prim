@@ -56,7 +56,6 @@ def handleSongEnd(senderInfo):
     return
 
 async def pauseMusicStream(**kwargs):
-    from functions.opheliaDiscord import join_voice_channel
     from functions.opheliaDiscord import join_voice_channel, sendChannel
     senderInfo = kwargs["senderInfo"]
     voice_client = await join_voice_channel(senderInfo = senderInfo)
@@ -69,7 +68,6 @@ async def pauseMusicStream(**kwargs):
     await sendChannel(output, "musicChannel")
     return
 async def stopMusicStream(**kwargs):
-    from functions.opheliaDiscord import join_voice_channel
     from functions.opheliaDiscord import join_voice_channel, sendChannel
     senderInfo = kwargs["senderInfo"]
     voice_client = await join_voice_channel(senderInfo = senderInfo)

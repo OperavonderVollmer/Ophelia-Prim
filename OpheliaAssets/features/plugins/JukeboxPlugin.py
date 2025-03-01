@@ -17,7 +17,7 @@ class plugin(opheliaPlugin):
         self.currentSongIndex = 0
         self.currentPlaybackID = None
         self.volume = 100
-        self.jukebox = []
+        self.jukebox = {}
         self.process = None
         self.ffplay_process = None
         self.isDiscord = True
@@ -26,10 +26,19 @@ class plugin(opheliaPlugin):
         return self.modes
     
     def getOptions(self, dir=False):
-        valid = ["start", "stop", "pause", "next", "previous", "repeat", "shuffle", "pulltheplug"]
+        valid = ["start", "stop", "pause", "next", "previous", "repeat", "shuffle", "pulltheplug", "discord"]
         return valid 
 
-    def getSongInfo(self, url: str):
+    def getServersPlaylist(self, guildID):
+        if not self.isDiscord: 
+            print("Getting local playlist")
+            return self.jukebox.setdefault("local", {"playlist": [], "index": 0, "isRunning": False, "isRepeat": 0, "isPlaying": False})
+        
+        return self.jukebox.setdefault(guildID, {"playlist": [], "index": 0, "isRunning": False, "isRepeat": 0, "isPlaying": False})
+
+    
+
+    def getSongInfo(self, url: str, guild=None):
         def formatTime(seconds):
             minutes = seconds // 60
             seconds = seconds % 60
@@ -41,21 +50,44 @@ class plugin(opheliaPlugin):
                 capture_output=True,
                 text=True
             )
+
+            # Debugging: Print output
+            if result.stderr:
+                print(f"yt-dlp Error: {result.stderr.strip()}")  # Logs yt-dlp errors
+
+            if not result.stdout.strip():
+                print("Error: yt-dlp did not return any output.")
+                return None  # Handle empty output properly
+
             video_info = json.loads(result.stdout)
-            return {
+
+            song = {
                 "title": video_info.get("title", "Unknown Title"),
                 "uploader": video_info.get("artist", video_info.get("uploader", "Unknown Uploader")),
                 "duration": formatTime(video_info.get("duration", 0)),
                 "url": url,
             }
+
+            if guild is not None:
+                jukebox = self.getServersPlaylist(guild)
+                jukebox["playlist"].append(song)
+                self.jukebox[guild] = jukebox
+                print(f"Added '{song['title']}' to playlist")
+            else:
+                return song 
+
+        except json.JSONDecodeError as e:
+            print(f"JSON Error: {e}\nRaw yt-dlp output:\n{result.stdout}")  # Debug raw output
+            return None
         except Exception as e:
             print(f"Error fetching video info: {e}")
             return None
 
+
     def playSong(self, **kwargs):
         song = kwargs["command"]
         senderInfo = kwargs.get("senderInfo", None)
-        print(f"Trying to play {song['title']}")
+        print(f"Trying to play '{song['title']}'")
         o = (f"Playing: {song['title']} by {song['uploader']} ({song['duration']})")
         print("IN WE GOOOOOO")
         if self.isDiscord:                
@@ -79,12 +111,12 @@ class plugin(opheliaPlugin):
                 if playbackID == self.currentPlaybackID:
                     self.nextSong(senderInfo=senderInfo)
             except AttributeError: print("Song stopped.")
-
-        if not self.isRunning:
-            return ("The jukebox isn't running.")
-        if self.isPlaying: self.stopSong(command=False)
+        jukebox = self.getServersPlaylist(senderInfo["guild"])
+        if not jukebox["isRunning"]: return ("The jukebox isn't running.")
+        if jukebox["isPlaying"]: self.stopSong(command=False)
         try:
-            self.isPlaying = True
+            print("Trying to play song")
+            jukebox["isPlaying"] = True
             newID = uuid.uuid4()
             self.currentPlaybackID = newID  # Generate a unique ID for this playback session
 
@@ -93,7 +125,6 @@ class plugin(opheliaPlugin):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL
             )
-            '"-volume", str(self.volume),'
             self.ffplay_process = subprocess.Popen(
                 ["ffplay", "-nodisp", "-autoexit",  "-"],
                 stdin=self.process.stdout,
@@ -109,33 +140,31 @@ class plugin(opheliaPlugin):
             print("Error: Make sure yt-dlp and ffplay are installed.")
         except Exception as e:
             return(f"An error occurred trying to play locally: {e}")
-        
-
-    
 
     def pauseSong(self, **kwargs):
         from functions.opheliaDiscordJukebox import pauseMusicStream
         from functions.opheliaDiscord import discordLoop
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
         if self.isDiscord:
             async_to_sync_params(pauseMusicStream, discordLoop, senderInfo = kwargs["senderInfo"])
             return "Pausing/unpausing song..."
 
-        if not self.isRunning:
+        if not jukebox["isRunning"]:
             return("The jukebox isn't playing anything.")
         
-        if self.ffplay_process and self.isPlaying:
+        if self.ffplay_process and jukebox["isPlaying"]:
             try:
                 p = psutil.Process(self.ffplay_process.pid)
                 p.suspend()
-                self.isPlaying = False
+                self.jukebox[kwargs["senderInfo"]["guild"]]["isPlaying"] = False
             except Exception as e:
                 print(f"Error pausing: {e}")
             return("Pausing song...")
-        elif self.ffplay_process and not self.isPlaying:
+        elif self.ffplay_process and not jukebox["isPlaying"]:
             try:
                 p = psutil.Process(self.ffplay_process.pid)
                 p.resume()
-                self.isPlaying = True
+                self.jukebox[kwargs["senderInfo"]["guild"]]["isPlaying"] = True
             except Exception as e:
                 print(f"Error resuming: {e}")
             return("Unpausing song...")
@@ -148,7 +177,8 @@ class plugin(opheliaPlugin):
             async_to_sync_params(stopMusicStream, discordLoop, senderInfo = kwargs["senderInfo"])
             return "Stopping song..."
         
-        if not self.isPlaying: return ("No song is playing.")
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])        
+        if not jukebox["isPlaying"]: return ("No song is playing.")
 
         for attr in ["process", "ffplay_process"]:  
             p = getattr(self, attr)
@@ -159,19 +189,21 @@ class plugin(opheliaPlugin):
                 except subprocess.TimeoutExpired:
                     p.kill()
                 setattr(self, attr, None) 
-        self.isPlaying = False
-        if fullStop: self.isRunning = False; self.currentSongIndex = 0
+        jukebox["isPlaying"] = False
+        if fullStop: jukebox["isRunning"] = False; jukebox["index"] = 0
+        self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
         return("Song stopped.")
 
-    def volumeControl(self, **kwargs):
+    def volumeControl(self, **kwargs):        
         if self.isDiscord:
             return "Jukebox on discord doesn't support volume control."
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
         try:
             newVolume = int(kwargs["command"])
             if newVolume < 0 or newVolume > 100: raise ValueError
         except (ValueError, TypeError):
             return ("Volume must be an integer between 0 and 100")         
-        if not self.isRunning:
+        if not jukebox["isRunning"]:
             return("Jukebox is not playing")
         try:
             sessions = AudioUtilities.GetAllSessions()
@@ -185,109 +217,142 @@ class plugin(opheliaPlugin):
             return(f"Error adjusting volume: {e}")
 
     def nextSong(self, **kwargs):
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
         print("Playing next song...")
-        self.currentSongIndex += 1
-        if self.currentSongIndex >= len(self.jukebox):
-            if self.isRepeat == 1:
-                self.currentSongIndex = 0
-            elif self.isRepeat == 0:
+        if not jukebox["playlist"]: return("Jukebox is empty")
+        jukebox["index"] += 1
+        if jukebox["index"] >= len(jukebox["playlist"]):
+            if jukebox["isRepeat"] == 1:
+                jukebox["index"] = 0
+            elif jukebox["isRepeat"] == 0:
                 self.stopSong(command=True, senderInfo = kwargs.get("senderInfo", None))
                 return  ("Reached the end of the playlist")
-        if 0 <= self.currentSongIndex < len(self.jukebox): 
-            x = self.playSong(command = self.jukebox[self.currentSongIndex], senderInfo = kwargs.get("senderInfo", None))
+        if 0 <= jukebox["index"] < len(jukebox["playlist"]):
+            self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
+            x = self.playSong(command = jukebox["playlist"][jukebox["index"]], senderInfo = kwargs.get("senderInfo", None))
             if kwargs.get("end", False): return
             else : return x
     
     def previousSong(self, **kwargs):
-        if self.currentSongIndex > 0: self.currentSongIndex -= 1
-        if 0 <= self.currentSongIndex < len(self.jukebox): return self.playSong(command = self.jukebox[self.currentSongIndex], senderInfo = kwargs.get("senderInfo", None))
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
+        if jukebox["index"] > 0: jukebox["index"] -= 1
+        if 0 <= jukebox["index"] < len(jukebox["playlist"]): 
+            self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
+            return self.playSong(command = jukebox["playlist"][jukebox["index"]], senderInfo = kwargs["senderInfo"])
 
     def repeatSong(self, **kwargs):
-        if self.isRepeat == 2: self.isRepeat = 0
-        else: self.isRepeat += 1
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
+        if jukebox["isRepeat"] == 2: jukebox["isRepeat"] = 0
+        else: jukebox["isRepeat"] += 1
         repeat = {0: "No repeat", 1: "Repeat playlist", 2: "Repeat song"}
-        return (f"Repeat mode set to {repeat[self.isRepeat]}")
+        self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
+        return (f"Repeat mode set to {repeat[jukebox['isRepeat']]}")
 
     def dropTheNeedle(self, **kwargs):
-        self.isRunning = True
-        self.currentSongIndex = 0
-        if len(self.jukebox) > 0:
-            currentSong = self.jukebox[self.currentSongIndex]
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
+        jukebox["isRunning"] = True
+        self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
+        if len(jukebox["playlist"]) > 0 and 0 <= jukebox["index"] < len(jukebox["playlist"]):
+            currentSong = jukebox["playlist"][jukebox["index"]]
             return self.playSong(command = currentSong, senderInfo = kwargs["senderInfo"])
         else: return("Jukebox is empty")
 
+
     def insertCoin(self, **kwargs):
-        """Adds a single video or an entire playlist to the jukebox."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
+        url = str(kwargs["command"]).strip()
         
-        # Detect if the URL is a playlist
-        url = str(kwargs["command"])
         print(f"Adding {url} to jukebox...")
+
         try:
+            # Check if it's a playlist or a single video
             result = subprocess.run(
-                ["yt-dlp", "--flat-playlist", "--print", "url", url],
+                ["yt-dlp", "--print", "%(playlist_count)s", url],
                 capture_output=True,
                 text=True,
                 check=True
             )
-            video_urls = result.stdout.strip().split("\n")
-            outputMessage = []
-            if len(video_urls) > 1:
-                print(f"Adding {len(video_urls)} songs from playlist to jukebox...")
-                for video_url in video_urls:
-                    song = self.getSongInfo(video_url)
-                    if song:
-                        self.jukebox.append(song)
-                        o = (f"Added '{song['title']}' to jukebox")
-                        print (o)
-                        outputMessage.append(o)
+            
+            if result.stdout.strip().isdigit() and int(result.stdout.strip()) > 1:
+                # This means it's a playlist
+                result = subprocess.run(
+                    ["yt-dlp", "--flat-playlist", "--print", "url", url],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                video_urls = result.stdout.strip().split("\n")
             else:
-                song = self.getSongInfo(url)
-                if song:
-                    self.jukebox.append(song)
-                    outputMessage = f"Added '{song['title']}' to jukebox"
+                # Single video
+                video_urls = [url]
+
+            # Limit concurrent downloads
+            max_threads = 3  
+            with ThreadPoolExecutor(max_workers=max_threads) as executor:
+                futures = {executor.submit(self.getSongInfo, video_url, kwargs["senderInfo"]["guild"]): video_url for video_url in video_urls}
+
+                for future in as_completed(futures):
+                    try:
+                        future.result()  # Wait for each task to complete
+                    except Exception as e:
+                        print(f"Error fetching video info: {e}")
+
+            print("All songs have been added to the jukebox.")
+            self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
 
         except Exception as e:
-            return(f"Error adding playlist: {e}")
-        peep = self.peepJukebox(**kwargs)
-        if isinstance(outputMessage, list): return('\n'.join(outputMessage) + "\n" + peep)
-        return(outputMessage + "\n" + peep)
+            return f"Error adding song/playlist. Please check if the video is age-restricted.\nError: {e}"
+
+        return self.peepJukebox(senderInfo=kwargs["senderInfo"])
+
+
 
     def peepJukebox(self, **kwargs):
-        if len(self.jukebox) == 0: return "Jukebox is empty"
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
+        if not jukebox["playlist"]: return "Jukebox is empty"
         peep = []
-        for i, song in enumerate(self.jukebox, 0):
-            star = "* " if i == self.currentSongIndex else ""
+        for i, song in enumerate(jukebox["playlist"], 0):
+            star = "* " if i == jukebox["index"] else ""
             peep.append(f"{star}Song #{i + 1}. '{song['title']}' by {song['uploader']} ({song['duration']})")
 
-        if kwargs["command"] == "secret": return peep
-        return "Jukebox:\n-------------------------------\n" + "\n".join(peep)
+        if kwargs.get("command", "") == "secret": return peep
+        return f"Jukebox: for {kwargs['senderInfo']['guild']}\n-------------------------------\n" + "\n".join(peep)
     
     def pullThePlug(self,**kwargs):
-        self.jukebox = []
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])     
+        jukebox["playlist"] = []
+        jukebox["index"] = 0
+        self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
         self.stopSong(command=True, senderInfo = kwargs["senderInfo"])
         return "Jukebox has been emptied and turned off"
 
     def shuffleCards(self, **kwargs):
-        if len(self.jukebox) < 1: return ("Jukebox is empty")
-
-        current_song = self.jukebox[self.currentSongIndex]  # Keep track of the current song
-        random.shuffle(self.jukebox)  # Shuffle the list
-        new_index = self.jukebox.index(current_song)
-        self.currentSongIndex = new_index
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])        
+        if not jukebox["playlist"]: return ("Jukebox is empty")
+        
+        # Keep track of the current song
+        current_song =jukebox["playlist"][jukebox["index"]]
+        random.shuffle(jukebox["playlist"])  # Shuffle the list
+        new_index = jukebox["playlist"].index(current_song)
+        jukebox["index"] = new_index
+        self.jukebox[kwargs["senderInfo"]["guild"]] = jukebox
         return("Shuffled Jukebox:\n" + self.peepJukebox())
 
-    def lineCut(self, **kwargs):      # LineCut is a command to cut a song in the playlist and start a new playlist from that song.
-
+    def lineCut(self, **kwargs):      # LineCut is a command to cut to a song in the playlist 
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
+        if not jukebox['playlist']: return("Jukebox is empty")
         try:
             index = int(kwargs["command"]) - 1
-            if 0 <= index < len(self.jukebox):
-                self.currentSongIndex = index
-                return self.playSong(command = self.jukebox[self.currentSongIndex], senderInfo = kwargs["senderInfo"])
-            else: return("Index out of range")
+            if 0 <= index < len(jukebox["playlist"]):
+                jukebox["index"] = index
+                return self.playSong(command = jukebox["playlist"][jukebox["index"]], senderInfo = kwargs["senderInfo"])
+            return f"Index out of range. Must be between 1 and {len(jukebox['playlist'])}."
         except (ValueError, TypeError, IndexError):
-            return (f"Index must be an integer between 1 and {len(self.jukebox)}") 
+            return (f"Index must be an integer between 1 and {len(jukebox['playlist'])}") 
         
-    def songBook(self, **kwargs): 
+    def songBook(self, **kwargs):
+        jukebox = self.getServersPlaylist(kwargs["senderInfo"]["guild"])
         searchSong = kwargs["command"]
         try:
             result = subprocess.run(
@@ -298,7 +363,7 @@ class plugin(opheliaPlugin):
             )
             song = self.getSongInfo(result.stdout.split()[-1])
             if song:
-                self.jukebox.append(song)
+                jukebox['playlist'].append(song)
                 return(f"Added '{song['title']}' to jukebox")
         except Exception as e:
             return(f"Error adding song: {e}")
@@ -307,14 +372,6 @@ class plugin(opheliaPlugin):
         self.isDiscord = not self.isDiscord
         return (f"Discord use is now {self.isDiscord}")
 
-# voice commands
-# command jukebox control start, stop, stop, pause, volume, next, previous, repeat, shuffle, peep, linecut, pull the plug,
-# non voice command
-# all and add
-
-# uses an array as parameter
-# [target,mode]
-# should be able to take null target as param
     def jukeboxControls(self, **kwargs):
         controls = {
             "start": self.dropTheNeedle,
@@ -335,7 +392,8 @@ class plugin(opheliaPlugin):
         #try:
         if kwargs["mode"] == "help": raise Exception
         print(kwargs["mode"] + " " + kwargs["command"])
-        return controls[kwargs["mode"]](command = kwargs["command"], senderInfo = kwargs["senderInfo"])
+        senderInfo = kwargs.get("senderInfo", {"guild": "local"})
+        return controls[kwargs["mode"]](command = kwargs["command"], senderInfo = senderInfo)
         """except Exception as e:
             opheNeu.debug_log(f"Jukebox Error {e}")
             return(f"Jukebox command not recognized. Available commands: {', '.join(controls.keys())}.")"""
@@ -345,15 +403,19 @@ class plugin(opheliaPlugin):
         t = self.prepExecute()
         opheNeu.debug_log(f"Target is '{t[1]}' and mode is '{t[0]}'")
         if "add" in t: return "Add song is not supported for voice commands, please insert using Discord"
-        return self.jukeboxControls(command = t[0], mode = t[1])
+        return self.jukeboxControls(command = t[0], mode = t[1], senderInfo = {"guild": "local"})
 
     def cheatResult(self, **kwargs):    
-        t = kwargs["command"]    
+        t = kwargs["command"]
+        senderInfo = kwargs.get("senderInfo") or {"guild": "local"}
+        if not self.isDiscord: 
+            senderInfo["guild"] = "local"
         for mode in self.modes:
             if t.__contains__(mode):
                 t = t.replace(mode, "").replace(" ", "")
                 opheNeu.debug_log(f"Target is '{t}' and mode is '{mode}'")
-                return self.jukeboxControls(command = t, mode = mode, senderInfo = kwargs["senderInfo"])
+                res = self.jukeboxControls(command = t, mode = mode, senderInfo = senderInfo)
+                return res
         return self.jukeboxControls([t, "help"])
 
 def get_plugin():

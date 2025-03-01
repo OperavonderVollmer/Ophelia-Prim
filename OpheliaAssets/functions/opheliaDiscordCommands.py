@@ -1,10 +1,27 @@
 import discord
 
 #target, command_name, command_desc, mode, args
+async def sendLongMessage(resp, senderInfo):
+    if not resp: return
+    is_ephemeral = senderInfo["itself"].response.is_done()  # Check if it's ephemeral
+
+    while len(resp) > 2000:
+        cutoff = resp[:2000].rfind("\n") 
+        if cutoff == -1:  
+            cutoff = 2000 
+        
+        chunk = resp[:cutoff]  
+        resp = resp[cutoff:].lstrip() 
+        
+        await senderInfo["itself"].followup.send(chunk, ephemeral=is_ephemeral) 
+    if resp and len(resp) > 0:
+        await senderInfo["itself"].followup.send(resp, ephemeral=is_ephemeral)
+            
 def runPlugin(command_name: str, mode: str = "", args: str = "", act: discord.Interaction = None):
     from opheliaPlugins import plugins
-    from functions.opheliaDiscord import discordTokens, sendChannel
+    from functions.opheliaDiscord import discordTokens, sendChannel, discordLoop
     from functions.sanitize import sanitizeText
+    from functions.opheliaAsync import async_to_sync_params
 
     senderInfo = {
         "name": act.user.name,
@@ -28,7 +45,10 @@ def runPlugin(command_name: str, mode: str = "", args: str = "", act: discord.In
     resp = plugins[comm].cheatResult(command = command, senderInfo = senderInfo)
     if resp == "556036": return "Execution finished successfully"
     print(f"response: {resp}")
-    return resp
+    async_to_sync_params(sendLongMessage, discordLoop, resp=resp, senderInfo=senderInfo)
+    return  
+
+
 
 def setupCommands(tree):
     from opheliaPlugins import plugins
@@ -51,7 +71,6 @@ def setupCommands(tree):
                 async def command_callback(act: discord.Interaction):
                     await act.response.defer(ephemeral=True)
                     res = runPlugin(command_name=command_name, act=act)
-                    await act.followup.send(res)
                 return command_callback
             tree.command(name=command_name, description=command_desc)(create_command_callback(command_name))
 
@@ -60,7 +79,6 @@ def setupCommands(tree):
                 async def command_callback(act: discord.Interaction, args:str = ""):
                     await act.response.defer(ephemeral=True)
                     res = runPlugin(command_name=command_name, args=args, act=act)
-                    await act.followup.send(res)
                 return command_callback
             tree.command(name=command_name, description=command_desc)(create_command_callback(command_name))
 
@@ -69,7 +87,6 @@ def setupCommands(tree):
                 async def command_callback(act: discord.Interaction, mode: str, args:str = ""):
                     await act.response.defer(ephemeral=True)
                     res = runPlugin(command_name=command_name, mode=mode, args=args, act=act)
-                    await act.followup.send(res)
                 return command_callback
             choices = [discord.app_commands.Choice(name=option, value=option) for option in target.getModes()]
             decorated = discord.app_commands.choices(mode=choices)(create_command_callback(command_name))
