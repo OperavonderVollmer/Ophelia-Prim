@@ -43,6 +43,7 @@ micIndex = config.micIndex
 speakerIndex = config.speakerIndex
 opheliaRequired = True
 opheliaInterrupted = False
+opheliaLocal = True
 recognizer = sr.Recognizer()
 mic = sr.Microphone()
 engine = pyttsx3.init('sapi5')

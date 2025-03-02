@@ -29,8 +29,8 @@ def getIcon(commandMap=ophePlu.plugins):
         def onClicked(icon, item):
             item = str(item).replace(" Options", "").lower()
             # directly calls a plugin's cheatResult, bypassing the need for a spoken command
-            print(f"Calling {item}...")
-            ophePlu.plugins[key].cheatResult(command = f"{item}", senderInfo=None, isTray=True)
+            print(f"Calling {item}...")            
+            threading.Thread(target=ophePlu.plugins[key].cheatResult, kwargs={"command": f'{item}', "senderInfo":None, "isTray":True}).start()
         options = ophePlu.plugins[key].getOptions()
         return pystray.Menu(
             *[pystray.MenuItem(key.capitalize(), onClicked) for key in options]
@@ -61,7 +61,7 @@ def startIcon():
 # stop only if icon is not none and ophelia is not required
 def iconMonitoring():
     while opheNeu.opheliaRequired: 
-        time.sleep(10)
+        time.sleep(5)
         opheNeu.debug_log("Icon monitoring Loop, ticking...", True)
     opheNeu.debug_log("Stopping Icon...")
     tray_icon.visible = False

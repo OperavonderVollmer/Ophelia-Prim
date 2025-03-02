@@ -11,6 +11,4 @@ opheWake.opheliaBegin(onStartBool=False, quickstart=True)
 
 #--------------------------------------------------------#
 
-
-
-
+# opheWake.startDiscord()

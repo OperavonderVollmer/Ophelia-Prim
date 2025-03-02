@@ -1,7 +1,7 @@
 import discord
 
 #target, command_name, command_desc, mode, args
-async def sendLongMessage(resp, senderInfo):
+async def sendLongMessage(resp, senderInfo, isTargeted=False):
     if not resp: return
     is_ephemeral = senderInfo["itself"].response.is_done()  # Check if it's ephemeral
 
@@ -13,15 +13,22 @@ async def sendLongMessage(resp, senderInfo):
         chunk = resp[:cutoff]  
         resp = resp[cutoff:].lstrip() 
         
-        await senderInfo["itself"].followup.send(chunk, ephemeral=is_ephemeral) 
+        if not isTargeted:
+            await senderInfo["itself"].followup.send(chunk, ephemeral=is_ephemeral) 
+        else: 
+            await senderInfo["itself"].followup.send(chunk)
     if resp and len(resp) > 0:
-        await senderInfo["itself"].followup.send(resp, ephemeral=is_ephemeral)
+        if not isTargeted:
+            await senderInfo["itself"].followup.send(resp, ephemeral=is_ephemeral)
+        else:
+            await senderInfo["itself"].followup.send(resp)
             
 def runPlugin(command_name: str, mode: str = "", args: str = "", act: discord.Interaction = None):
     from opheliaPlugins import plugins
     from functions.opheliaDiscord import discordTokens, sendChannel, discordLoop
     from functions.sanitize import sanitizeText
-    from functions.opheliaAsync import async_to_sync_params
+    from functions.opheliaAsync import async_to_sync_params, async_to_sync
+    from opheliaNeurals import opheliaLocal, getRandomDialogue
 
     senderInfo = {
         "name": act.user.name,
@@ -32,15 +39,21 @@ def runPlugin(command_name: str, mode: str = "", args: str = "", act: discord.In
         "discriminator": act.user.discriminator,
         "itself": act
     }
+
+    if opheliaLocal and senderInfo["id"] not in discordTokens["authorizedUsers"]:
+        async_to_sync_params(sendLongMessage, discordLoop, "Ophelia is currently in local mode. Please contact `Opera` for assistance.", senderInfo=senderInfo)
+        return
+    
     comm = command_name.capitalize()
-    if plugins[comm].getOperaOnly():
-        if senderInfo["id"] not in discordTokens["authorizedUsers"]:
-            return "You are not authorized to use this command"
+    if plugins[comm].getOperaOnly() and senderInfo["id"] not in discordTokens["authorizedUsers"]:
+        return "You are not authorized to use this command"
+    
     if mode != "": command = f"{mode} {args}"
     else: command = args    
     # sanitize text, if return is false, immediately delete the user's message 
     if sanitizeText(command) == None: 
-        sendChannel(f"User: {senderInfo['name']} | Channel: {senderInfo['guild']}\nMessage: ```{command}```\nTimestamp: {senderInfo['itself'].created_at}", "warningChannel")
+        async_to_sync(sendChannel(f"User: {senderInfo['name']} | Channel: {senderInfo['guild']}\nMessage: ```{command}```\nTimestamp: {senderInfo['itself'].created_at}", "warningChannel"), discordLoop)
+        async_to_sync_params(sendLongMessage, discordLoop, resp=getRandomDialogue("dirty_messages"), isTargeted=True, senderInfo=senderInfo)
         return
     resp = plugins[comm].cheatResult(command = command, senderInfo = senderInfo)
     if resp == "556036": return "Execution finished successfully"

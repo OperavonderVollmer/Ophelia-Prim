@@ -2,9 +2,11 @@ import yt_dlp
 import asyncio
 import discord
 
-yt_dl_opts = {'format': 'bestaudio/best'}
+yt_dl_opts = {
+    'format': 'bestaudio/best',
+    'ignore-config': True   # this might break something
+}
 ytdl = yt_dlp.YoutubeDL(yt_dl_opts)
-#ffmpeg_opts = {'options': '-vn'}
 ffmpeg_opts = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn -ac 2 -ar 48000 -b:a 256k -bufsize 512k'

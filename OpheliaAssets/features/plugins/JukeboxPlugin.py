@@ -101,12 +101,13 @@ class plugin(opheliaPlugin):
                 print("GIVE IT SOME TIME")
                 return o
             except Exception as e: return (f"Error occured trying to play through discord: {e}")
-        def _monitorPlayback(playbackID = None, senderInfo = None):
+        def _monitorPlayback(playbackID = None, senderInfo = None):            
             """Waits for the song to finish playing, then calls nextSong()."""
             try:
                 while self.ffplay_process.poll() is None:
                     if not self.jukebox[senderInfo["guild"]]["isRunning"]: return
                     if playbackID != self.currentPlaybackID: return
+                    if not opheNeu.opheliaRequired: return
                     time.sleep(1)
                 if playbackID == self.currentPlaybackID:
                     print("Song finished")
@@ -357,6 +358,7 @@ class plugin(opheliaPlugin):
 
     def discordOn(self, **kwargs):
         self.isDiscord = not self.isDiscord
+        opheNeu.opheliaLocal = not self.isDiscord
         return (f"Discord use is now {self.isDiscord}")
 
     def jukeboxControls(self, **kwargs):
@@ -392,10 +394,11 @@ class plugin(opheliaPlugin):
         if "add" in t: return "Add song is not supported for voice commands, please insert using Discord"
         return self.jukeboxControls(command = t[0], mode = t[1], senderInfo = {"guild": "local"})
 
-    def cheatResult(self, **kwargs):    
+    def cheatResult(self, **kwargs):
         t = kwargs["command"]
         senderInfo = kwargs.get("senderInfo") or {"guild": "local"}
-        if not self.isDiscord: 
+        print(senderInfo)
+        if not self.isDiscord:
             senderInfo["guild"] = "local"
         for mode in self.modes:
             if t.__contains__(mode):
