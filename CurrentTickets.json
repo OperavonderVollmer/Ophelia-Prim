@@ -1,74 +1,9 @@
 {
     "dailyCount": 0,
-    "tierIncrement": 0,
+    "tierIncrement": 1,
     "questList": [
         {
-            "questName": "Do drugs",
-            "questType": "daily",
-            "questLevel": null,
-            "timeStart": null,
-            "timeEnd": null,
-            "questReward": "+1 to daily count (rewards at 1, 4 and 8)",
-            "questRewardPool": [
-                [
-                    "Get a cup of coffee"
-                ],
-                [
-                    "Binge memes 30 minutes",
-                    "Listen to an album",
-                    "Play a game for 30 minutes",
-                    "Brain off for 30 minutes"
-                ],
-                [
-                    "Watch 2-3 amount of episodes of show",
-                    "Watch a movie",
-                    "Sensual Exercise",
-                    "Game time"
-                ]
-            ]
-        },
-        {
-            "questName": "Slay dragon",
-            "questType": "main",
-            "questLevel": 5,
-            "timeStart": null,
-            "timeEnd": null,
-            "questReward": "Level five reward",
-            "questRewardPool": [
-                [
-                    "Level one reward"
-                ],
-                [
-                    "Level two reward"
-                ],
-                [
-                    "Level three reward"
-                ],
-                [
-                    "Level four reward"
-                ],
-                [
-                    "Level five reward"
-                ],
-                [
-                    "Level six reward"
-                ],
-                [
-                    "Level seven reward"
-                ],
-                [
-                    "Level eight reward"
-                ],
-                [
-                    "Level nine reward"
-                ],
-                [
-                    "Level ten reward"
-                ]
-            ]
-        },
-        {
-            "questName": "Go to store",
+            "questName": "Spook the spook",
             "questType": "main",
             "questLevel": 5,
             "timeStart": null,
@@ -108,11 +43,5 @@
             ]
         }
     ],
-    "persistentDaily": [
-        {
-            "questName": "Do drugs",
-            "timeStart": null,
-            "timeEnd": null
-        }
-    ]
+    "persistentDaily": []
 }

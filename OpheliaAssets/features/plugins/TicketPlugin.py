@@ -75,7 +75,7 @@ class plugin(opheliaPlugin):
                 if tier: self.questReward += f"and tier {tier} daily reward: {random.choice(self.questRewardPool[tier - 1])}"
                 if dc == 8: ti += 1
                 return {"dailyCount": dc, "tierIncrement": ti, "reward": self.questReward}
-        class mainQuest(quest):
+        class mainQuest(quest):# 5
             def __init__(self, questName: str, questType: str, questLevel: int, timeStart: datetime = None,timeEnd: datetime = None, questReward: str = None, questRewardPool: list = None):
                 super().__init__(
                     questName, 
@@ -96,7 +96,7 @@ class plugin(opheliaPlugin):
                 decision = input(f"The reward is `{self.questReward}`. You currently have {ti} tier increment.\nClaim[1], Upgrade[2], or Pass[3]?: ").lower()
                 if decision == "2": 
                     if ti != 0: 
-                        self.questReward = random.choice(self.questRewardPool[min(ti + self.questLevel, len(self.questRewardPool) - 1)])
+                        self.questReward = random.choice(self.questRewardPool[min(ti + self.questLevel -1, len(self.questRewardPool) - 1)])
                         ti = 0
                     else: print("You have no tier increment for an upgrade. Regular reward will be given.")
                 elif decision == "3": 
@@ -119,7 +119,7 @@ class plugin(opheliaPlugin):
                 ["Watch 2-3 amount of episodes of show", "Watch a movie", "Sensual Exercise", "Game time"],
             ]
             self.mainRewardList = [ # main quest rewards are divided into 10 tiers, some scaling with level of tier
-                # TODO: add quests
+                # TODO: add rewards
                 ["Level one reward"],
                 ["Level two reward"],
                 ["Level three reward"],
@@ -131,7 +131,6 @@ class plugin(opheliaPlugin):
                 ["Level nine reward"],
                 ["Level ten reward"],
             ]
-
             self.dailyCount = 0
             self.tierIncrement = 0
             self.mainQuestList = []
@@ -143,9 +142,9 @@ class plugin(opheliaPlugin):
             self.persistentPath = "PersistentTickets.json"
             self.loadState()
             self.refreshFromPersistent()
-
-
-        def questHelper(self, opheliaHears, opheliaSpeak, variable = None, prompt = None, strip: str = None):
+        def questHelper(self, prompt = None, strip: str = None):
+                from functions.opheliaHears import opheliaHears
+                from functions.opheliaMouth import opheliaSpeak
                 number_corrections = {
                     "fi": "five", 
                     "fiv": "five",
@@ -163,7 +162,7 @@ class plugin(opheliaPlugin):
                     "on": "one",
                 }
                 try:
-                    while variable is None:
+                    while True:
                         if prompt is not None: opheliaSpeak(prompt)
                         resp = opheliaHears()
                         if resp is None: 
@@ -178,24 +177,21 @@ class plugin(opheliaPlugin):
                             return resp
                 except Exception as e:
                     print(f"Error: {e}, resp: {resp}")
-            
-
-        def addQuestWizard(self, questName: str=None, questType: str=None, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None):
-            
-            
+        def addQuestWizard(self, questName: str=None, questType: str=None, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None, *args):
+            if args: 
+                questName, questType, questLevel = (args + [None] * 3) [:3]
             if questName is None: 
-                from functions.opheliaHears import opheliaHears
-                from functions.opheliaMouth import opheliaSpeak
-                questName = self.questHelper(opheliaHears, opheliaSpeak, questName, "Quest Name")
-                questType = self.questHelper(opheliaHears, opheliaSpeak, questType, "Quest Type. Daily or Main followed by quest", " quest").lower()
-                if questType == "main": questLevel = opheNeu.normalizeNumber(self.questHelper(opheliaHears, opheliaSpeak, questLevel, "Quest Level. Say Level, followed by a number between 1 and 10", "level "))
+                questName = self.questHelper("Quest Name")
+                questType = self.questHelper("Quest Type. Daily or Main followed by quest", " quest").lower()
+                if questType == "main": questLevel = opheNeu.normalizeNumber(self.questHelper("Quest Level. Say Level, followed by a number between 1 and 10", "level "))
                 else: questLevel = None
                 print(f"Quest Name: {questName} | Quest Type: {questType} | Quest Level: {questLevel if questLevel is not None else 'No level'}")
             if questLevel is not None and questType == "daily": print("Daily quests do not have a level.")
-            self.addQuest(self.genericQuest(questName.capitalize(), questType, questLevel, timeStart, timeEnd))
+            return self.addQuest(self.genericQuest(questName.capitalize(), questType, questLevel, timeStart, timeEnd))
         def addQuest(self, q: genericQuest, giveList = False):
             """
                 Returns quest if giveList is not None. Else, automatically appends quest to associated quest list.
+                genericQuests don't have questRewardPool naturally so needs to be added here.
             """
             if not isinstance(q, self.genericQuest):
                 raise TypeError(f"Expected a genericQuest object, but got {type(q).__name__}")
@@ -210,6 +206,7 @@ class plugin(opheliaPlugin):
             if quest.QuestType == "daily": self.dailyQuestList.append(quest)
             elif quest.QuestType == "main": self.mainQuestList.append(quest)
             self.saveState()
+            return "Quest has been succesfully added"
         def testPopulateQuests(self, max):
             for i in range(max):
                 questType = random.choice(["daily", "main"])
@@ -220,16 +217,19 @@ class plugin(opheliaPlugin):
                 }
                 if questType == "daily": self.addQuest(self.genericQuest(**params))
                 elif questType == "main": self.addQuest(self.genericQuest(**params))
-        def addToPersistent(self, questName: str = None, timeStart: datetime = None, timeEnd: datetime = None):
-            from functions.opheliaHears import opheliaHears
-            from functions.opheliaMouth import opheliaSpeak
+        def addToPersistent(self, questName: str = None, timeStart: datetime = None, timeEnd: datetime = None, **kwargs):
+            if kwargs.get("questName") is not None:
+                questName = kwargs["questName"]
             if questName is None: 
-                questName = self.questHelper(opheliaHears, opheliaSpeak, questName, "Quest Name")
+                questName = self.questHelper("Quest Name")
             print(f"Adding {questName.capitalize()} to persistent list")
             newDaily = self.genericQuest(questName.capitalize(), "daily", timeStart, timeEnd)
             self.persistentDaily.append(newDaily)
             self.saveState()
-        def removeFromPersistent(self, questName: str):
+        def removeFromPersistent(self, *args):
+            questName = args[0] if args else None
+            if questName is None:
+                questName = self.questHelper("Quest Name")
             for quest in self.persistentDaily:
                 if quest.QuestName == questName:
                     self.persistentDaily.remove(quest)
@@ -244,7 +244,6 @@ class plugin(opheliaPlugin):
                 elif quest.timeEnd is not None and quest.timeEnd < datetime.now():
                     self.expiredQuests.append(self.addQuest(quest, True))
                 else: temporaryQuestList.append(self.addQuest(quest, True))
-            print(self.persistentDaily)
             self.dailyQuestList = temporaryQuestList.copy()
         def timeSens(self):
             import threading as th
@@ -254,7 +253,9 @@ class plugin(opheliaPlugin):
             #from functions.opheliaAsync import async_to_sync
             # TODO: replace req with opheNeu.opheliaRequired 
             def timeSensitiveQuestHandler(self, warningThreshold: timedelta = timedelta(minutes=30)):
+                firstRun = False
                 while req:
+                    from opheliaPlugins import plugins 
                     reminder = []
                     for quest in self.dailyQuestList + self.mainQuestList:
             # Checks if the quest has expired
@@ -270,30 +271,74 @@ class plugin(opheliaPlugin):
                         if quest.TimeStart is not None and quest.TimeStart < datetime.now():
                             if quest.questType == "daily" and quest not in self.dailyQuestList: self.dailyQuestList.append(self.addQuest(quest, True))
                             elif quest.questType == "main" and quest not in self.mainQuestList: self.mainQuestList.append(self.addQuest(quest, True))
-                            self.queuedQuests.remove(quest)
-                    if len(reminder) > 0:
-                        from opheliaPlugins import plugins
-                        plugins["Transmission"].audioThroughMic(f"The following quests are expiring soon: {', '.join(reminder)}", True, False)
-                    print("Ticket routine check in. Remaining quests: " + str(len(self.dailyQuestList + self.mainQuestList)))
+                            self.queuedQuests.remove(quest)           
+                    if firstRun:
+                        firstRun = False
+                    else:
+                        if self.dailyCount < 4: t = "no_dailies"
+                        elif self.dailyCount < 8: t = "half_dailies"
+                        else: t = "full_dailies"
+                        fa = opheNeu.getRandomDialogue(t)
+                        if len(self.dailyQuestList) != 0: 
+                            fa.append("\nRemaining Daily quests: " + str(len(self.dailyQuestList)))
+                        if len(reminder) > 0:
+                            fa.append("\nThe following quests are expiring soon: " + ", ".join(reminder))
+                        plugins["Transmission"].audioThroughMic(fa, True, False)
+                    print(fa)
                     #async_to_sync(sendChannel("Ticket routine check in. Remaining quests: " + str(len(self.dailyQuestList + self.mainQuestList)), "logChannel"), discordLoop)
                     self.saveState()
-                    time.sleep(1800) # waits 30 minutes            
+                    time.sleep(1800) # waits 30 minutes  
             req = True
             warningThreshold = timedelta(hours=1)
             timeSensitiveThread = th.Thread(target=timeSensitiveQuestHandler, args=(self, warningThreshold), daemon=True)
             timeSensitiveThread.start()
             return True
-        def listQuests(self, isPrint=True):
+        def listQuests(self, isPrint=True, which="both", *args):
             if isPrint:
                 print("Daily Quests:")
                 for quest in self.dailyQuestList:
-                    print(f"Quest Name: {quest.QuestName} | Reward: {quest.QuestReward}")
+                    print (f"Quest Name: {quest.QuestName} | Reward: {quest.QuestReward}")
                 print("\nMain Quests:")
                 for quest in self.mainQuestList:
-                    print(f"Quest Name: {quest.QuestName} | Reward: {quest.QuestReward}")
-            return {"daily": self.dailyQuestList, "main": self.mainQuestList, "all": self.dailyQuestList + self.mainQuestList}
-        def finishQuest(self, name: str):
-
+                    print (f"Quest Name: {quest.QuestName} | Reward: {quest.QuestReward}")
+                which = which.lower()
+                if which == "daily": return self.dailyQuestList
+                elif which == "main": return self.mainQuestList
+            return self.dailyQuestList + self.mainQuestList
+        def handleListQuests(self, *args):
+            """
+                Types: 
+                    Full - Gives all information
+                    Short - Only gives names
+                    Half - Gives names and rewards
+                    r suffix returns the given list
+            """
+            questList = self.listQuests(isPrint=True)
+            if not args: return "The available types are Full, Short, and Half. Prefix r if you want the list returned"
+            command = args[0] if args else "full"
+            returnFlag = False
+            res = []
+            if questList:
+                if command.startswith("r"):
+                    command = command[1:]
+                    returnFlag = True
+                for quest in questList:
+                    if command == "full":
+                        res.append(f"Quest Name: {quest.QuestName} | Type: {quest.QuestType} | Level: {quest.QuestLevel} | Time Start: {quest.TimeStart} | Time End: {quest.TimeEnd} | Reward: {quest.QuestReward}")
+                    elif command == "short":
+                        res.append(f"{quest.QuestName}")
+                    elif command == "half":
+                        res.append(f"{quest.QuestName} | {quest.QuestReward}")
+                    else: 
+                        return "The available types are Full, Short, and Half. Prefix r if you want the list returned"
+                if returnFlag:
+                    return res
+                return ("\n").join(res)
+            else:
+                return "There are no quests to list"
+        def finishQuest(self, *args):
+            if args: name = args[0]
+            else: name = self.questHelper("Quest Name")
             for quest in self.dailyQuestList + self.mainQuestList:
                 if quest.QuestName.lower() == name.lower():
                     results = quest.finishQuest(tierIncrement=self.tierIncrement, dailyCount=self.dailyCount)
@@ -323,7 +368,7 @@ class plugin(opheliaPlugin):
                             "questReward": quest.QuestReward,
                             "questRewardPool": quest.QuestRewardPool
                         }
-                        for quest in self.listQuests(False)["all"]
+                        for quest in self.listQuests(False)
                     ],
                 "persistentDaily": 
                 [
@@ -364,7 +409,6 @@ class plugin(opheliaPlugin):
                     questReward=quest.get("questReward", "No reward"),
                     questRewardPool=quest.get("questRewardPool", self.dailyRewardList if quest["questType"] == "daily" else self.mainRewardList))
                     )
-            print(f"Persisten Daily {persistentDaily}")
             for quest in persistentDaily:
                 self.addToPersistent(
                     quest["questName"], 
@@ -378,35 +422,52 @@ class plugin(opheliaPlugin):
             prompt="Which command would you like to execute?", 
             description="Template", 
             needsArgs=True, 
-            modes=[
-            "finish", "list", "new", "add", "remove"
-            ],
             operaOnly=True)
-        self.qm = self.questManager()
-        if self.qm.timeSens(): print("Ticket handler operational")
-        else: print("FAILED: Ticket handler not operational")
+        self.qm = None
 
-    def interactWithQuests(self, command):
+    def interactWithQuests(self, mode, args):    # legend for cheatResult
         controls = {
-            "finish": self.qm.finishQuest,
-            "list": self.qm.listQuests,
-            "new": self.qm.addQuestWizard,
-            "add": self.qm.addToPersistent,
-            "remove": self.qm.removeFromPersistent
+            "finish": self.qm.finishQuest,          # need quest name
+            "list": self.qm.handleListQuests,             
+            "new": self.qm.addQuestWizard,          # need quest name, type, level
+            "add": self.qm.addToPersistent,         # need quest name
+            "remove": self.qm.removeFromPersistent  # need quest name
         }
         try:
-            return controls[command]()
+            return controls[mode](*args)
         except KeyError:
             return f"Command not recognized. Available commands: {', '.join(controls.keys())}."
         
+    def startQuestManager(self)->str:
+        self.qm = self.questManager()
+        count = str(self.qm.dailyCount)
+        if self.qm.timeSens(): print("Ticket handler operational")
+        else: print("FAILED: Ticket handler not operational")
+        return f"{count} out of 8"
 
     def execute(self):
-        self.interactWithQuests("list")
-        """res = self.prepExecute()
-        return self.interactWithQuests(res)"""
+        res = self.prepExecute()
+        return self.cheatResult(command=res)
 
+#test input "new questname questtype questlevel"
+#test input "add questname"
     def cheatResult(self, **kwargs):
-        return self.interactWithQuests(kwargs["command"])
+        import re
+        string = kwargs["command"]
+        mode = string.split(" ")[0].lower()
+        string = string.replace(mode + " ", "").replace(mode, "").lower()
+        type = "main" if string.__contains__("main") else "daily" if string.__contains__("daily") else None
+        string = string.replace("main ", "").replace("daily ", "")
+        numbers = re.findall(r'\d+', string)
+        level = int(numbers[-1]) if numbers else None
+        name = re.sub(r'\d+$', '', string).strip()
+        
+        args = []
+        if name: args.append(name)
+        if type: args.append(type)
+        if level: args.append(level)
+        opheNeu.debug_log(f"Mode: {mode} | Args: {args}")
+        return self.interactWithQuests(mode = mode, args = args)
 
 def get_plugin():
     return plugin()

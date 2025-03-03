@@ -30,7 +30,7 @@ def getIcon(commandMap=ophePlu.plugins):
             item = str(item).replace(" Options", "").lower()
             # directly calls a plugin's cheatResult, bypassing the need for a spoken command
             print(f"Calling {item}...")            
-            threading.Thread(target=ophePlu.plugins[key].cheatResult, kwargs={"command": f'{item}', "senderInfo":None, "isTray":True}).start()
+            threading.Thread(target=ophePlu.plugins[key].cheatResult, kwargs={"command": f'{item}', "senderInfo":None, "isTray":True}, daemon=True).start()
         options = ophePlu.plugins[key].getOptions()
         return pystray.Menu(
             *[pystray.MenuItem(key.capitalize(), onClicked) for key in options]

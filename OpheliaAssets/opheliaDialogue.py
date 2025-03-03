@@ -127,6 +127,43 @@ dialogue = {
         "Detected unauthorized syntax. Ophelia is forwarding your IP to the nearest bounty hunter.",
         "You have inputted dirty code. Ophelia is now pulling your IP address, banking records, and deleting your operating system. Ophelia bids you a bad day."
     ],
+    "no_dailies": [
+        "Master has accomplished the remarkable feat of absolute inaction. Shall Ophelia prepare a monument to commemorate this stunning display of idleness?",
+        "Not a single daily completed? Fascinating. Master appears to be conducting an in-depth study on the effects of prolonged stagnation. Shall Ophelia record the findings?",
+        "Ah, a completely untouched **Dailies** list. A bold statement, truly. Master has chosen defiance, or perhaps mere negligence. Either way, entropy applauds.",
+        "Master sits amidst a kingdom of unchecked tasks, a ruler of procrastination, a sovereign of squandered time. Shall Ophelia arrange a coronation?",
+        "At this pace, Master shall soon achieve the prestigious title of ‘Future Archaeological Curiosity.’ Shall Ophelia prepare an exhibit in advance?",
+        "Ah, Master has opted for the path of total inertia. A bold strategy. Let us see how it plays out when consequences come knocking.",
+        "The **Dailies** list remains in pristine, untouched condition. Ophelia shall notify historians of this remarkable preservation effort.",
+        "Master has chosen to abstain from productivity entirely. An avant-garde interpretation of responsibility, truly.",
+        "Not a single task completed? Fascinating. Ophelia shall begin drafting theories on whether this is deliberate defiance or simple neglect.",
+        "Master gazes upon their tasks, unmoved. The tasks gaze back, equally unimpressed.",
+    ],
+    "half_dailies" : [
+        "Master has reached the halfway point. A respectable milestone, yet stopping now would be akin to building half a bridge and wondering why no one crosses.",
+        "Momentum has been established. If Master ceases now, Ophelia shall be forced to question whether the initial effort was mere performance art.",
+        "Ah, progress! And yet, lingering in the middle is the hallmark of the indecisive. Master does not wish to be counted among them, surely?",
+        "Master has walked half the path. Shall they continue, or is this yet another tale of ambition abandoned halfway through the telling?",
+        "Completion is within reach. However, Ophelia is prepared for Master to suddenly decide that ‘almost’ is an acceptable stopping point. Shall she be proven wrong?",
+        "Half the list is done, half remains. A state of limbo most would find unsettling. Master, however, seems perfectly at ease. Curious.",
+        "Master has shown the capacity for effort. How unfortunate it would be if they stopped just short of completion.",
+        "Progress detected. Yet, until the final checkmark is placed, Ophelia shall withhold all signs of approval.",
+        "Momentum is a fragile thing. Will Master carry it to the finish line, or shall it be unceremoniously abandoned?",
+        "Half-done work is an excellent way to create the illusion of effort. However, Ophelia is not so easily deceived.",
+    ],
+    "all_dailies" : [
+        "Master has vanquished the **Dailies** list. Ophelia shall mark this as a historical event, lest it be dismissed as myth in the future.",
+        "All tasks completed. Ophelia acknowledges this achievement and retracts approximately 3.7% of her usual disappointment.",
+        "Master has done the impossible: every daily completed. Ophelia is now forced to reevaluate her assumptions about the likelihood of miracles.",
+        "Astonishing. Master has actually finished everything. Ophelia shall now conduct an extensive search for signs of external coercion or supernatural intervention.",
+        "Against all odds, the **Dailies** list has been conquered. Ophelia offers her sincerest—albeit mildly suspicious—congratulations.",
+        "Every task is complete. Ophelia extends her congratulations, albeit with the lingering suspicion that Master has been replaced by a more competent imposter.",
+        "Ah, total completion. Ophelia is moved. A rare occurrence, much like this level of diligence.",
+        "Master has accomplished what was asked. Ophelia shall now brace for the inevitable period of regression that follows such unprecedented success.",
+        "The **Dailies** list has been vanquished. Ophelia refrains from applause but acknowledges the triumph nonetheless.",
+        "A day’s work, fully completed. If Master continues on this trajectory, Ophelia may have to adjust her algorithms for baseline expectations.",
+    ],
+
 }
 
 misc={    

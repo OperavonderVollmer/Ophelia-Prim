@@ -38,7 +38,7 @@ def opheliaBegin(onStartBool, quickstart=False, discord=True):
         except: pass
         opheliaMouth.opheliaSpeak(opheNeu.getRandomDialogue("ready"))
     
-
+    opheliaMouth.opheliaSpeak(f"There are currently {ophePlu.plugins['Ticket'].startQuestManager()} daily quests completed.")
     ophePlu.plugins["Posture"].postureCheckWrapped()
     opheBri.opheliaStartMainLoop()
     
