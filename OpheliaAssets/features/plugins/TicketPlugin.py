@@ -83,12 +83,12 @@ class plugin(opheliaPlugin):
                     questLevel, 
                     timeStart, 
                     timeEnd, 
-                    questReward = questReward if isinstance(questReward, str) else random.choice(questRewardPool[min(questLevel, len(questRewardPool) - 1)]) if questRewardPool else "No reward", 
+                    questReward = questReward if isinstance(questReward, str) else random.choice(questRewardPool[min(questLevel - 1, len(questRewardPool) - 1)]) if questRewardPool else "No reward", 
                     questRewardPool=questRewardPool)
 
             def updateQuestPool(self, questRewardPool):
                 self.questRewardPool = questRewardPool
-                self.questReward = random.choice(self.questRewardPool[min(self.questLevel, len(self.questRewardPool) - 1)])
+                self.questReward = random.choice(self.questRewardPool[min(self.questLevel - 1, len(self.questRewardPool) - 1)])
                 return True
 
             def finishQuest(self, **kwargs):
@@ -104,12 +104,14 @@ class plugin(opheliaPlugin):
                     self.questReward = "+1 to tier increment"
                 return {"dailyCount": kwargs["dailyCount"], "tierIncrement": ti, "reward": self.questReward}
         class genericQuest:
-            def __init__(self, questName: str, questType: str, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None):
+            def __init__(self, questName: str, questType: str, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None, questReward: str = None, questRewardPool: list = None):
                 self.questName = questName
                 self.questType = questType
                 self.questLevel = questLevel
                 self.timeStart = timeStart
                 self.timeEnd = timeEnd
+                self.questReward = questReward
+                self.questRewardPool = questRewardPool
         def __init__(self):
             self.dailyRewardList = [ # daily quest rewards are divided into three tiers
                 ["Get a cup of coffee"],
@@ -142,15 +144,55 @@ class plugin(opheliaPlugin):
             self.loadState()
             self.refreshFromPersistent()
 
+
+        def questHelper(self, opheliaHears, opheliaSpeak, variable = None, prompt = None, strip: str = None):
+                number_corrections = {
+                    "fi": "five", 
+                    "fiv": "five",
+                    "to": "two", 
+                    "too": "two", 
+                    "tu": "two",
+                    "tree": "three", 
+                    "thre": "three",
+                    "sicks": "six", 
+                    "sex": "six",
+                    "ate": "eight", 
+                    "ateen": "eighteen",
+                    "eigh": "eight",
+                    "won": "one",
+                    "on": "one",
+                }
+                try:
+                    while variable is None:
+                        if prompt is not None: opheliaSpeak(prompt)
+                        resp = opheliaHears()
+                        if resp is None: 
+                            opheliaSpeak("No response received. Please try again.")
+                            continue
+                        else: resp = resp.lower()
+                        if strip is not None: resp = resp.lower().strip(strip)
+                        if resp == "no": resp = None
+                        if resp in number_corrections.keys(): resp = number_corrections[resp]
+                        opheliaSpeak(f"Is `{resp if resp is not None else 'None'}` correct?: ")
+                        if opheliaHears(timeout=10, timed=True).lower() == "yes": 
+                            return resp
+                except Exception as e:
+                    print(f"Error: {e}, resp: {resp}")
+            
+
         def addQuestWizard(self, questName: str=None, questType: str=None, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None):
+            
+            
             if questName is None: 
-                questName = input("Quest name: ")
-                questType = input("Quest type (Daily / Main): ").lower()
-                if questType == "main": questLevel = int(input("Level: "))
+                from functions.opheliaHears import opheliaHears
+                from functions.opheliaMouth import opheliaSpeak
+                questName = self.questHelper(opheliaHears, opheliaSpeak, questName, "Quest Name")
+                questType = self.questHelper(opheliaHears, opheliaSpeak, questType, "Quest Type. Daily or Main followed by quest", " quest").lower()
+                if questType == "main": questLevel = opheNeu.normalizeNumber(self.questHelper(opheliaHears, opheliaSpeak, questLevel, "Quest Level. Say Level, followed by a number between 1 and 10", "level "))
                 else: questLevel = None
-                
+                print(f"Quest Name: {questName} | Quest Type: {questType} | Quest Level: {questLevel if questLevel is not None else 'No level'}")
             if questLevel is not None and questType == "daily": print("Daily quests do not have a level.")
-            self.addQuest(self.genericQuest(questName, questType, questLevel, timeStart, timeEnd))
+            self.addQuest(self.genericQuest(questName.capitalize(), questType, questLevel, timeStart, timeEnd))
         def addQuest(self, q: genericQuest, giveList = False):
             """
                 Returns quest if giveList is not None. Else, automatically appends quest to associated quest list.
@@ -178,9 +220,15 @@ class plugin(opheliaPlugin):
                 }
                 if questType == "daily": self.addQuest(self.genericQuest(**params))
                 elif questType == "main": self.addQuest(self.genericQuest(**params))
-        def addToPersistent(self, questName: str, timeStart: datetime = None, timeEnd: datetime = None):
-            newDaily = self.genericQuest(questName, "daily", timeStart, timeEnd)
+        def addToPersistent(self, questName: str = None, timeStart: datetime = None, timeEnd: datetime = None):
+            from functions.opheliaHears import opheliaHears
+            from functions.opheliaMouth import opheliaSpeak
+            if questName is None: 
+                questName = self.questHelper(opheliaHears, opheliaSpeak, questName, "Quest Name")
+            print(f"Adding {questName.capitalize()} to persistent list")
+            newDaily = self.genericQuest(questName.capitalize(), "daily", timeStart, timeEnd)
             self.persistentDaily.append(newDaily)
+            self.saveState()
         def removeFromPersistent(self, questName: str):
             for quest in self.persistentDaily:
                 if quest.QuestName == questName:
@@ -191,19 +239,19 @@ class plugin(opheliaPlugin):
             self.dailyCount = 0
             temporaryQuestList = []
             for quest in self.persistentDaily:
-                if quest.TimeStart is not None and quest.TimeStart < datetime.now():
+                if quest.timeStart is not None and quest.timeStart < datetime.now():
                     self.queuedQuests.append(self.addQuest(quest, True))
-                elif quest.TimeEnd is not None and quest.TimeEnd < datetime.now():
+                elif quest.timeEnd is not None and quest.timeEnd < datetime.now():
                     self.expiredQuests.append(self.addQuest(quest, True))
                 else: temporaryQuestList.append(self.addQuest(quest, True))
-
-            self.dailyQuestList = temporaryQuestList        
+            print(self.persistentDaily)
+            self.dailyQuestList = temporaryQuestList.copy()
         def timeSens(self):
             import threading as th
             import time
             from datetime import timedelta
-            from functions.opheliaDiscord import discordLoop, sendChannel
-            from functions.opheliaAsync import async_to_sync
+            #from functions.opheliaDiscord import discordLoop, sendChannel
+            #from functions.opheliaAsync import async_to_sync
             # TODO: replace req with opheNeu.opheliaRequired 
             def timeSensitiveQuestHandler(self, warningThreshold: timedelta = timedelta(minutes=30)):
                 while req:
@@ -226,7 +274,8 @@ class plugin(opheliaPlugin):
                     if len(reminder) > 0:
                         from opheliaPlugins import plugins
                         plugins["Transmission"].audioThroughMic(f"The following quests are expiring soon: {', '.join(reminder)}", True, False)
-                    async_to_sync(sendChannel("Ticket routine check in. Remaining quests: " + str(len(self.dailyQuestList + self.mainQuestList)), "logChannel"), discordLoop)
+                    print("Ticket routine check in. Remaining quests: " + str(len(self.dailyQuestList + self.mainQuestList)))
+                    #async_to_sync(sendChannel("Ticket routine check in. Remaining quests: " + str(len(self.dailyQuestList + self.mainQuestList)), "logChannel"), discordLoop)
                     self.saveState()
                     time.sleep(1800) # waits 30 minutes            
             req = True
@@ -274,14 +323,14 @@ class plugin(opheliaPlugin):
                             "questReward": quest.QuestReward,
                             "questRewardPool": quest.QuestRewardPool
                         }
-                        for quest in self.listQuests()["all"]
+                        for quest in self.listQuests(False)["all"]
                     ],
                 "persistentDaily": 
                 [
                     {
-                        "questName": quest.QuestName,
-                        "timeStart": quest.TimeStart.isoformat() if quest.TimeStart else None,
-                        "timeEnd": quest.TimeEnd.isoformat() if quest.TimeEnd else None
+                        "questName": quest.questName,
+                        "timeStart": quest.timeStart.isoformat() if quest.timeStart else None,
+                        "timeEnd": quest.timeEnd.isoformat() if quest.timeEnd else None
                     }
                     for quest in self.persistentDaily
                 ]
@@ -315,7 +364,7 @@ class plugin(opheliaPlugin):
                     questReward=quest.get("questReward", "No reward"),
                     questRewardPool=quest.get("questRewardPool", self.dailyRewardList if quest["questType"] == "daily" else self.mainRewardList))
                     )
-                
+            print(f"Persisten Daily {persistentDaily}")
             for quest in persistentDaily:
                 self.addToPersistent(
                     quest["questName"], 
@@ -345,11 +394,16 @@ class plugin(opheliaPlugin):
             "add": self.qm.addToPersistent,
             "remove": self.qm.removeFromPersistent
         }
-        pass
+        try:
+            return controls[command]()
+        except KeyError:
+            return f"Command not recognized. Available commands: {', '.join(controls.keys())}."
         
 
     def execute(self):
-        self.prepExecute()
+        self.interactWithQuests("list")
+        """res = self.prepExecute()
+        return self.interactWithQuests(res)"""
 
     def cheatResult(self, **kwargs):
         return self.interactWithQuests(kwargs["command"])

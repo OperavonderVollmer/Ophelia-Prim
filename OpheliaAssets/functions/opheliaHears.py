@@ -28,7 +28,8 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer, timed=False):
                 callback(currRecognizer, audio)
                 return opheliaHeard if opheliaHeard else None
             except opheNeu.sr.WaitTimeoutError:
-                return "Query cancelled"
+                print("Query cancelled")
+                return None
     stop_listening = currRecognizer.listen_in_background(mic, callback, phrase_time_limit=timeout)
     while not opheliaHeard and opheNeu.opheliaRequired:
         opheNeu.time.sleep(0.05)
