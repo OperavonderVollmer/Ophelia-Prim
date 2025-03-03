@@ -36,3 +36,5 @@ debug.log
 /Unused
 *.backup
 CurrentTickets.json
+CurrentTickets copy.json
+CurrentTickets.json
