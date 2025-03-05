@@ -6,6 +6,7 @@ import random
 import json
 import os
 import shutil
+import time
 
 class plugin(opheliaPlugin):
 # call prepExecute to speak the prompt, and get args. If hasModes is true, will return an array instead    
@@ -140,8 +141,7 @@ class plugin(opheliaPlugin):
             self.expiredQuests = []
             self.path = "CurrentTickets.json"
             self.persistentPath = "PersistentTickets.json"
-            self.loadState()
-            self.refreshFromPersistent()
+            if self.loadState() and self.saveState(): print ("Tickets loaded successfully")
         def questHelper(self, prompt = None, strip: str = None):
                 from functions.opheliaHears import opheliaHears
                 from functions.opheliaMouth import opheliaSpeak
@@ -177,7 +177,7 @@ class plugin(opheliaPlugin):
                             return resp
                 except Exception as e:
                     print(f"Error: {e}, resp: {resp}")
-        def addQuestWizard(self, questName: str=None, questType: str=None, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None, *args):
+        def addQuestWizard(self, questName: str=None, questType: str=None, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None, returnQuest: bool = False, *args):
             if args: 
                 questName, questType, questLevel = (args + [None] * 3) [:3]
             if questName is None: 
@@ -187,7 +187,7 @@ class plugin(opheliaPlugin):
                 else: questLevel = None
                 print(f"Quest Name: {questName} | Quest Type: {questType} | Quest Level: {questLevel if questLevel is not None else 'No level'}")
             if questLevel is not None and questType == "daily": print("Daily quests do not have a level.")
-            return self.addQuest(self.genericQuest(questName.capitalize(), questType, questLevel, timeStart, timeEnd))
+            return self.addQuest(self.genericQuest(questName.capitalize(), questType, questLevel, timeStart, timeEnd), returnQuest)
         def addQuest(self, q: genericQuest, giveList = False):
             """
                 Returns quest if giveList is not None. Else, automatically appends quest to associated quest list.
@@ -217,15 +217,15 @@ class plugin(opheliaPlugin):
                 }
                 if questType == "daily": self.addQuest(self.genericQuest(**params))
                 elif questType == "main": self.addQuest(self.genericQuest(**params))
-        def addToPersistent(self, questName: str = None, timeStart: datetime = None, timeEnd: datetime = None, **kwargs):
-            if kwargs.get("questName") is not None:
-                questName = kwargs["questName"]
+        def addToPersistent(self, questName: str = None, timeStart: datetime = None, timeEnd: datetime = None, *args):
+            if args: questName = args[0]
             if questName is None: 
                 questName = self.questHelper("Quest Name")
             print(f"Adding {questName.capitalize()} to persistent list")
-            newDaily = self.genericQuest(questName.capitalize(), "daily", timeStart, timeEnd)
+            newDaily = self.genericQuest(questName.capitalize(), "daily", None, timeStart, timeEnd)
             self.persistentDaily.append(newDaily)
             self.saveState()
+            return f"Successfully added {questName} to persistent list"
         def removeFromPersistent(self, *args):
             questName = args[0] if args else None
             if questName is None:
@@ -238,13 +238,43 @@ class plugin(opheliaPlugin):
         def refreshFromPersistent(self):
             self.dailyCount = 0
             temporaryQuestList = []
+            currentTime = datetime.now().time()
             for quest in self.persistentDaily:
-                if quest.timeStart is not None and quest.timeStart < datetime.now():
-                    self.queuedQuests.append(self.addQuest(quest, True))
-                elif quest.timeEnd is not None and quest.timeEnd < datetime.now():
-                    self.expiredQuests.append(self.addQuest(quest, True))
-                else: temporaryQuestList.append(self.addQuest(quest, True))
+                qStart = quest.timeStart.time() if quest.timeStart else None
+                qEnd = quest.timeEnd.time() if quest.timeEnd else None
+                print(f"======================================\nChecking {quest.questName}. Time Start: {qStart} | Time End: {qEnd} | Time Now: {currentTime}")
+                # time start > time now 
+                # only if time now is less than time start (earlier)
+                if qStart:
+                    if qStart > currentTime:
+                        self.queuedQuests.append(self.addQuest(quest, True))
+                        print("Verdict: Queued")
+                        continue
+                # time now 
+                # only if time now is greater than time end (later)
+                # if earlier than time end, appends to temporary quest list
+                if qEnd:
+                    if qStart:
+                        if currentTime < qEnd:
+                            temporaryQuestList.append(self.addQuest(quest, True))
+                            print("Verdict: Temporary")
+                            continue
+                    if currentTime >= qEnd:
+                        self.expiredQuests.append(self.addQuest(quest, True))
+                        print("Verdict: Expired")
+                        continue
+                    else:
+                        temporaryQuestList.append(self.addQuest(quest, True))
+                        print("Verdict: Temporary")
+                        continue
+                else: 
+                    temporaryQuestList.append(self.addQuest(quest, True)) 
+                    print("Verdict: Temporary")
+                    # temporary quest list to be added to proper quest list
+                time.sleep(0.5)
+            print(f"Refreshing Daily Quests. There are currently: {len(temporaryQuestList)} daily quests added. There are {len(self.queuedQuests)} queued quests and {len(self.expiredQuests)} expired quests.")
             self.dailyQuestList = temporaryQuestList.copy()
+            self.saveState()
         def timeSens(self):
             import threading as th
             import time
@@ -253,25 +283,32 @@ class plugin(opheliaPlugin):
             #from functions.opheliaAsync import async_to_sync
             # TODO: replace req with opheNeu.opheliaRequired 
             def timeSensitiveQuestHandler(self, warningThreshold: timedelta = timedelta(minutes=30)):
-                firstRun = False
+                firstRun = True
                 while req:
                     from opheliaPlugins import plugins 
                     reminder = []
                     for quest in self.dailyQuestList + self.mainQuestList:
             # Checks if the quest has expired
-                        if quest.TimeEnd is not None and quest.TimeEnd < datetime.now():
-                            self.expiredQuests.append(self.addQuest(quest, True))
+                        currentTime = datetime.now().time()
+                        if quest.TimeEnd:
+                            if currentTime < quest.TimeEnd.time():
+                                self.expiredQuests.append(self.addQuestWizard(questName = quest.questName, questType = quest.questType, questLevel = quest.questLevel, timeStart = quest.timeStart, timeEnd = quest.timeEnd, returnQuest = True))
                             if quest.questType == "daily": self.dailyQuestList.remove(quest)
                             elif quest.questType == "main": self.mainQuestList.remove(quest)
-            # Checks if any quest is near expiry
-                        if quest.TimeEnd is not None and datetime.now() > quest.TimeEnd - warningThreshold:
-                            reminder.append(f"{quest.questName} ends in {quest.TimeEnd - datetime.now()}")
+            # Checks if any quest is near expiry. Takes quest time end - warning threshold to check if its earlier than 1 hour
+                        if quest.TimeEnd:
+                            quest_end_datetime = datetime.combine(datetime.today(), quest.TimeEnd.time())
+                            threshold_time = quest_end_datetime - warningThreshold 
+
+                            if currentTime > threshold_time.time():
+                                reminder.append(f"{quest.questName} ends in {quest.TimeEnd - datetime.now()}")
             # Checks if queued quest can be started
                     for quest in self.queuedQuests.copy():
-                        if quest.TimeStart is not None and quest.TimeStart < datetime.now():
-                            if quest.questType == "daily" and quest not in self.dailyQuestList: self.dailyQuestList.append(self.addQuest(quest, True))
-                            elif quest.questType == "main" and quest not in self.mainQuestList: self.mainQuestList.append(self.addQuest(quest, True))
-                            self.queuedQuests.remove(quest)           
+                        if quest.TimeStart:
+                            if currentTime >= quest.TimeStart.time():
+                                if quest.questType == "daily" and quest not in self.dailyQuestList: self.dailyQuestList.append(self.addQuestWizard(questName = quest.questName, questType = quest.questType, questLevel = quest.questLevel, timeStart = quest.timeStart, timeEnd = quest.timeEnd, returnQuest = True))
+                                elif quest.questType == "main" and quest not in self.mainQuestList: self.mainQuestList.append(self.addQuestWizard(questName = quest.questName, questType = quest.questType, questLevel = quest.questLevel, timeStart = quest.timeStart, timeEnd = quest.timeEnd, returnQuest = True))
+                                self.queuedQuests.remove(quest)           
                     if firstRun:
                         firstRun = False
                     else:
@@ -280,11 +317,11 @@ class plugin(opheliaPlugin):
                         else: t = "full_dailies"
                         fa = opheNeu.getRandomDialogue(t)
                         if len(self.dailyQuestList) != 0: 
-                            fa.append("\nRemaining Daily quests: " + str(len(self.dailyQuestList)))
+                            fa += f"\nRemaining Daily quests: " + str(len(self.dailyQuestList))
                         if len(reminder) > 0:
-                            fa.append("\nThe following quests are expiring soon: " + ", ".join(reminder))
+                            fa += f"\nThe following quests are expiring soon: " + ", ".join(reminder)
                         plugins["Transmission"].audioThroughMic(fa, True, False)
-                    print(fa)
+                        print(fa)
                     #async_to_sync(sendChannel("Ticket routine check in. Remaining quests: " + str(len(self.dailyQuestList + self.mainQuestList)), "logChannel"), discordLoop)
                     self.saveState()
                     time.sleep(1800) # waits 30 minutes  
@@ -293,6 +330,11 @@ class plugin(opheliaPlugin):
             timeSensitiveThread = th.Thread(target=timeSensitiveQuestHandler, args=(self, warningThreshold), daemon=True)
             timeSensitiveThread.start()
             return True
+        def checkProgress(self, *args):
+            dailyCount = self.dailyCount
+            tierIncrement = self.tierIncrement
+            return f"{dailyCount} out of 8 daily quests completed. Tier increment is currently {tierIncrement}. Currently {len(self.dailyQuestList)} daily quests and {len(self.mainQuestList)} main quests remaining."
+            pass
         def listQuests(self, isPrint=True, which="both", *args):
             if isPrint:
                 print("Daily Quests:")
@@ -314,8 +356,7 @@ class plugin(opheliaPlugin):
                     r suffix returns the given list
             """
             questList = self.listQuests(isPrint=True)
-            if not args: return "The available types are Full, Short, and Half. Prefix r if you want the list returned"
-            command = args[0] if args else "full"
+            command = args[0] if args else "short"
             returnFlag = False
             res = []
             if questList:
@@ -344,46 +385,66 @@ class plugin(opheliaPlugin):
                     results = quest.finishQuest(tierIncrement=self.tierIncrement, dailyCount=self.dailyCount)
                     self.dailyCount = results["dailyCount"]
                     self.tierIncrement = results["tierIncrement"]
-                    print(f"Reward: {results['reward']}")
+                    reward = (f"Master's reward is {results['reward']}")
                     if quest.QuestType == "daily": self.dailyQuestList.remove(quest)
                     elif quest.QuestType == "main": self.mainQuestList.remove(quest)
                     self.saveState()
-                    return True
-            return False
+                    return f"Quest has been succesfully finished. {reward}. There are currently {len(self.dailyQuestList)} daily quests and {len(self.mainQuestList)} main quests remaining."
+            return f"Couldn't find a quest with the name {name}"
         def saveState(self):
             """
-                Returns True if successful
+                Saves the current state and limits backups to the most recent 'backup_limit' count.
+                Also refreshes the daily quests if the date has changed between save time and last save.
+                Returns True if successful.
             """
-            params = {
-                "dailyCount": self.dailyCount,
-                "tierIncrement": self.tierIncrement,
-                "questList": 
+            backup_limit = 5
+            backup_dir = "backups"
+            os.makedirs(backup_dir, exist_ok=True)
+
+            try:                
+                if os.path.exists(self.path):                    
+                    lastSave = datetime.fromtimestamp(os.path.getmtime(self.path)).date()
+                    backupPath = os.path.join(backup_dir, f"TicketBackup_{lastSave.strftime('%Y-%m-%d')}.json")      
+                    shutil.copyfile(self.path, backupPath)
+                    if lastSave < datetime.now().date(): 
+                        os.remove(self.path)
+                        print("Last save was on a different day. Refreshing daily quests...")
+                        self.refreshFromPersistent()
+                params = {
+                    "dailyCount": self.dailyCount,
+                    "tierIncrement": self.tierIncrement,
+                    "questList": 
+                        [
+                            {
+                                "questName": quest.QuestName,
+                                "questType": quest.QuestType,
+                                "questLevel": quest.QuestLevel,
+                                "timeStart": quest.TimeStart.isoformat() if quest.TimeStart else None,
+                                "timeEnd": quest.TimeEnd.isoformat() if quest.TimeEnd else None,
+                                "questReward": quest.QuestReward,
+                                "questRewardPool": quest.QuestRewardPool
+                            }
+                            for quest in self.listQuests(False)
+                        ],
+                    "persistentDaily": 
                     [
                         {
-                            "questName": quest.QuestName,
-                            "questType": quest.QuestType,
-                            "questLevel": quest.QuestLevel,
-                            "timeStart": quest.TimeStart.isoformat() if quest.TimeStart else None,
-                            "timeEnd": quest.TimeEnd.isoformat() if quest.TimeEnd else None,
-                            "questReward": quest.QuestReward,
-                            "questRewardPool": quest.QuestRewardPool
+                            "questName": quest.questName,
+                            "timeStart": quest.timeStart.isoformat() if quest.timeStart else None,
+                            "timeEnd": quest.timeEnd.isoformat() if quest.timeEnd else None
                         }
-                        for quest in self.listQuests(False)
-                    ],
-                "persistentDaily": 
-                [
-                    {
-                        "questName": quest.questName,
-                        "timeStart": quest.timeStart.isoformat() if quest.timeStart else None,
-                        "timeEnd": quest.timeEnd.isoformat() if quest.timeEnd else None
-                    }
-                    for quest in self.persistentDaily
-                ]
-            }        
-            try:
-                if os.path.exists(self.path): shutil.copyfile(self.path, f"{self.path}{datetime.now().strftime('%Y-%m-%d_%H-%M')}.backup")
+                        for quest in self.persistentDaily
+                    ]
+                }  
                 with open(self.path, "w") as file:
                     json.dump(params, file, indent=4)
+
+                backups = sorted(
+                    [os.path.join(backup_dir, f) for f in os.listdir(backup_dir) if f.startswith("TicketBackup_")], key=os.path.getctime
+                )
+                while len(backups) > backup_limit:
+                    os.remove(backups.pop(0))
+
             except Exception as e:
                 print(f"Failed to save state: {e}")
                 return False
@@ -431,13 +492,20 @@ class plugin(opheliaPlugin):
             "list": self.qm.handleListQuests,             
             "new": self.qm.addQuestWizard,          # need quest name, type, level
             "add": self.qm.addToPersistent,         # need quest name
-            "remove": self.qm.removeFromPersistent  # need quest name
+            "remove": self.qm.removeFromPersistent, # need quest name
+            "progress": self.qm.checkProgress,
+            "refresh": self.qm.refreshFromPersistent,
+            "save": self.qm.saveState,
+            "load": self.qm.loadState
         }
         try:
             return controls[mode](*args)
         except KeyError:
             return f"Command not recognized. Available commands: {', '.join(controls.keys())}."
-        
+    
+    def qm(self):
+        return self.qm
+
     def startQuestManager(self)->str:
         self.qm = self.questManager()
         count = str(self.qm.dailyCount)

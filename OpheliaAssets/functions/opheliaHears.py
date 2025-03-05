@@ -19,7 +19,7 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer, timed=False):
             opheNeu.debug_log(f"Recognition error: {e}, didn't return anything to prevent confusion")
     print("Listening for user input...")
 
-    mic = opheNeu.sr.Microphone()
+    mic = opheNeu.sr.Microphone(device_index=2)
 
     if timed:
         with mic as source:

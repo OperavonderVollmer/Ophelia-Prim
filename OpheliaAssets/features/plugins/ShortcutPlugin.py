@@ -6,23 +6,24 @@ class plugin(opheliaPlugin):
         super().__init__("Shortcut", "What app would you like Ophelia to open?", operaOnly=True, description="Ophelia shall open a shortcut in the shortcut folder",needsArgs=True)
         
 
-    def getOptions(self, dir=False):
+    def getOptions(self, dir=False, removeExt=True):
         root_dir = opheNeu.os.path.dirname(opheNeu.os.path.abspath(__file__)) 
         shortcutDir = opheNeu.os.path.join(root_dir, "..", "..", "assets/shortcuts")
         if dir: return shortcutDir
         valid = []
         for file in opheNeu.os.listdir(shortcutDir):
             filep = opheNeu.os.path.join(shortcutDir, file)
-            if filep.endswith(".lnk"): valid.append(file[:-4])
+            if filep.endswith(".lnk"): valid.append(file[:-4] if removeExt else file)
+            elif filep.endswith(".url"): valid.append(file[:-4] if removeExt else file)
         return valid 
    
     
     def openApp(self, target):
-        shortcutDir = self.getOptions()       
+        shortcutDir = self.getOptions(removeExt=False)       
         for app in shortcutDir:
             print(f"Comparing target {target} with app {app}")
-            if app.lower() == str(target).lower():
-                shortcutPath = opheNeu.os.path.join(self.getOptions(dir=True), app + ".lnk")
+            if app[:-4].lower() == str(target).lower():
+                shortcutPath = opheNeu.os.path.join(self.getOptions(dir=True), app)
                 print(shortcutPath)
                 try:
                     opheNeu.subprocess.Popen([shortcutPath], shell=True)  

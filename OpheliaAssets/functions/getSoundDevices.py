@@ -34,3 +34,10 @@ device_name = "SteelSeries Sonar - Microphone (SteelSeries Sonar Virtual Audio D
 guid = get_device_guid(device_name)
 print(guid)
 """
+
+
+import speech_recognition as sr
+
+print("-------------------------------------\n")
+for index, name in enumerate(sr.Microphone.list_microphone_names()):
+    print(f"{index}: {name}")

@@ -45,7 +45,6 @@ opheliaRequired = True
 opheliaInterrupted = False
 opheliaLocal = True
 recognizer = sr.Recognizer()
-mic = sr.Microphone()
 engine = pyttsx3.init('sapi5')
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[1].id) 
