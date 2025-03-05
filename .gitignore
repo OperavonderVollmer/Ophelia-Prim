@@ -39,3 +39,9 @@ CurrentTickets.json
 CurrentTickets copy.json
 CurrentTickets.json
 /backups
+<<<<<<< Updated upstream
+=======
+CurrentTickets.json
+CurrentTickets.json
+>>>>>>> Stashed changes
+/OpheliaAssets/assets/shortcuts
