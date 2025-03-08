@@ -1,12 +1,12 @@
-#import opheliaWake as opheWake
+from opheliaWake import opheliaBegin
 #import opheliaBridge as opheBri
 
 
 #--------------------------------------------------------#
-#opheWake.opheliaBegin(not opheNeu.debugMode)
-#opheWake.opheliaBegin(onStartBool=True)
-#opheWake.opheliaBegin(onStartBool=False)
-#opheWake.opheliaBegin(onStartBool=False, quickstart=True)
+#opheliaBegin(not opheNeu.debugMode)
+#opheliaBegin(onStartBool=True)
+opheliaBegin(onStartBool=False)
+#opheliaBegin(onStartBool=False, quickstart=True)
 
 #--------------------------------------------------------#
 
@@ -14,7 +14,7 @@
 
 #--------------------------------------------------------#
 
-from opheliaPlugins import plugins
+"""from opheliaPlugins import plugins
 from datetime import datetime   
 
 now = datetime.now()
@@ -131,15 +131,15 @@ routine = {
     },
 
 }
-
-plugins["Ticket"].startQuestManager()
+"""
+"""plugins["Ticket"].startQuestManager()"""
 
 
 #For testing purposes only
 """for r in routine.values():
     plugins["Ticket"].qm.addToPersistent(questName = r["name"], timeStart = r["timeStart"], timeEnd = r["timeEnd"])"""
 
-print(plugins["Ticket"].cheatResult(command="refresh"))
+"""print(plugins["Ticket"].cheatResult(command="refresh"))"""
 
 """while True:
     decision = input("Finish, List, New, Add, Remove, Progress?: ").lower()

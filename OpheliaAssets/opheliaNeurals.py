@@ -62,10 +62,13 @@ postureLooping = False
 
 discordLoop = None
 
-def debug_log(message, deepLog=False): 
-    output = f"[DEBUG]--------------------------------------------------------[DEBUG] {message}"
+def debug_log(message, deepLog=False, speakLog=False): 
+    output = f"[DEBUG]--------------------------------------------------------[DEBUG] {message}" if speakLog is not "speakLogChannel" else message
     try:
-        if discordLoop is not None: discordLog(output, "deepLogChannel" if deepLog else "logChannel" )
+        if discordLoop is not None: discordLog(output, 
+                                               "deepLogChannel" if deepLog else 
+                                               "speakLogChannel" if speakLog else 
+                                               "logChannel" )
     except ImportError: print("Discord implementation cannot be located")
     except RuntimeError: print("Discord loop is not running")
     except Exception as e: output = e 
@@ -108,3 +111,35 @@ def normalizeNumber(t):
 
 def copyToClipboard(t):
     subprocess.run("clip", text=True, input=t, shell=True)
+
+def isRequired():
+    try:
+        return opheliaRequired  # Normal check
+    except NameError:  # If opheliaNeurals is gone, assume shutdown
+        return False
+    except AttributeError:  # If opheliaRequired is missing, assume shutdown
+        return False
+
+def monitorThreads():
+    def mon():
+        while True:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            try:                
+                if not isRequired():
+                    return
+                threadCount = len(thr.enumerate())
+                warningMessage = "SOFT WARNING: MORE THAN 50 THREADS LIVE." if threadCount > 50 else "HARD WARNING: MORE THAN 100 THREADS LIVE." if threadCount > 100 else ""
+                p = f"{warningMessage} There are currently {threadCount} threads running."
+                print(p)
+                opheLog.logging.debug(f"{p} - {timestamp}")
+                debug_log(p)
+                time.sleep(30)
+            except (NameError, AttributeError): # If opheliaNeurals is gone, assume shutdown
+                return
+            except Exception as e: 
+                opheLog.logging.debug(f"{e} - {timestamp}")
+                print("Monitor Thread failed, restarting in 5 seconds...")
+                time.sleep(5)
+                thr.Thread(target=monitorThreads, daemon=True).start()
+                return
+    thr.Thread(target=mon, daemon=True).start()

@@ -28,8 +28,7 @@ class plugin(opheliaPlugin):
         except ValueError: return "Please provide a valid number of minutes"
     def postureCheckWrapped(self):
         def postureCheck():
-            def postureCheckLoopMethod():          
-                opheNeu.postureLooping = True
+            def postureCheckLoopMethod():        
                 try:  
                     with open(opheNeu.postureCheckFile, "r") as postFile:
                         interval = int(postFile.read())
@@ -44,9 +43,14 @@ class plugin(opheliaPlugin):
                 while opheNeu.postureCheckActive:            
                     c = 1
                     for _ in range(totalChecks):
-                        if not opheNeu.postureCheckActive or not opheNeu.opheliaRequired:
-                            opheNeu.debug_log("Posture check deactivated due to posture check being deactivated")
-                            return True
+                        killMessage = "Posture check deactivated due to posture check being deactivated"
+                        try:
+                            if not opheNeu.isRequired() or not opheNeu.postureCheckActive: 
+                                opheNeu.debug_log(killMessage)
+                                break
+                        except (NameError, AttributeError): 
+                            print(killMessage)
+                            break
                         opheNeu.debug_log(f"Debug message within the posture loop #{c}", True)
                         #ophePlu.plugins["Transmission"].audioThroughMic(f"Debug message within the posture loop #{c}", True, False)
                         c+=1
@@ -55,13 +59,14 @@ class plugin(opheliaPlugin):
                     print(f"Playing posture audio {opheNeu.datetime.now()}")
                 opheNeu.debug_log("Posture check deactivated due to posture duration being over")
 
-            if not opheNeu.postureLooping and opheNeu.postureCheckActive: 
+            if not opheNeu.postureLooping and opheNeu.postureCheckActive:   
+                opheNeu.postureLooping = True
                 postureLoop = opheNeu.thr.Thread(target=postureCheckLoopMethod, daemon=True)
                 postureLoop.start()
                 postureLoop.join()
                 return
             else: return "Posture check is already active"
-        postureThread = opheNeu.thr.Thread(target=postureCheck)
+        postureThread = opheNeu.thr.Thread(target=postureCheck, daemon=True)
         print(f"Posture check starting at {opheNeu.datetime.now()}...")
         postureThread.start()
 

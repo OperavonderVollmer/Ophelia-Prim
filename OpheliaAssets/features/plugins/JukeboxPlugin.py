@@ -105,13 +105,19 @@ class plugin(opheliaPlugin):
             """Waits for the song to finish playing, then calls nextSong()."""
             try:
                 while self.ffplay_process.poll() is None:
-                    if not self.jukebox[senderInfo["guild"]]["isRunning"]: return
-                    if playbackID != self.currentPlaybackID: return
-                    if not opheNeu.opheliaRequired: return
+                    if not self.jukebox[senderInfo["guild"]]["isRunning"]: 
+                        self.stopSong(senderInfo=senderInfo)
+                        return
+                    if playbackID != self.currentPlaybackID: 
+                        self.stopSong(senderInfo=senderInfo)
+                        return
+                    if not opheNeu.opheliaRequired: 
+                        self.stopSong(senderInfo=senderInfo)
+                        return
                     time.sleep(1)
                 if playbackID == self.currentPlaybackID:
                     print("Song finished")
-                    self.nextSong(senderInfo=senderInfo)
+                    self.nextSong(senderInfo=senderInfo)                
             except AttributeError: print("Song stopped.")
         jukebox = self.getServersPlaylist(senderInfo["guild"])
         if not jukebox["isRunning"]: return ("The jukebox isn't running.")

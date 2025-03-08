@@ -27,7 +27,7 @@ class plugin(opheliaPlugin):
         try:
             text = text.lower()
             if isTTS:
-                with opheNeu.tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_wav:
+                with opheNeu.tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_wav:
                     fileName = temp_wav.name
                 opheNeu.engine.save_to_file(text, fileName)
                 opheNeu.engine.runAndWait() 
@@ -39,8 +39,8 @@ class plugin(opheliaPlugin):
                 audioPath = opheNeu.os.path.join(audioDir, target)
                 fileName = audioPath + ".wav"
             with opheNeu.wave.open(fileName, 'rb') as wav_file:
-                    sample_rate = wav_file.getframerate()
-                    audio_data = opheNeu.np.frombuffer(wav_file.readframes(wav_file.getnframes()), dtype=opheNeu.np.int16)
+                sample_rate = wav_file.getframerate()
+                audio_data = opheNeu.np.frombuffer(wav_file.readframes(wav_file.getnframes()), dtype=opheNeu.np.int16)
             if not isTTS: 
                 audio = opheNeu.AudioSegment.from_file(fileName)
                 bitrate = (audio.frame_rate * audio.frame_width * 8)
@@ -53,6 +53,7 @@ class plugin(opheliaPlugin):
             if playThroughMic: threads.append(opheNeu.thr.Thread(target=playAudio, args=(audio_data, sample_rate, mic_index)))
             for thread in threads: thread.start()
             for thread in threads: thread.join()
+            if isTTS: opheNeu.os.remove(fileName)    
         except FileNotFoundError: return False
         return True
 

@@ -35,3 +35,5 @@ pandas
 
 pycaw
 discord.py[voice]
+
+mss

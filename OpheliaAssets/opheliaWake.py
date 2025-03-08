@@ -18,6 +18,7 @@ def startDiscord():
 
 def opheliaBegin(onStartBool, quickstart=False, discord=True):
     print("Ophelia Prime Booting...")
+    opheNeu.thr.Thread(target=opheNeu.monitorThreads, daemon=True).start()
     opheBri.bridgeIconStart(opheIcon)
     opheNeu.debug_log("Ophelia Prime Booting...")
     if onStartBool: onStart()

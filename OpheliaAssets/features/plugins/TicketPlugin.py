@@ -73,10 +73,10 @@ class plugin(opheliaPlugin):
                 elif dc == 4: tier = 2
                 elif dc == 8: tier = 3
                 else: tier = 0
-                if tier: self.questReward += f"and tier {tier} daily reward: {random.choice(self.questRewardPool[tier - 1])}"
+                if tier: self.questReward += f" and tier {tier} daily reward: {random.choice(self.questRewardPool[tier - 1])}"
                 if dc == 8: ti += 1
                 return {"dailyCount": dc, "tierIncrement": ti, "reward": self.questReward}
-        class mainQuest(quest):# 5
+        class mainQuest(quest):
             def __init__(self, questName: str, questType: str, questLevel: int, timeStart: datetime = None,timeEnd: datetime = None, questReward: str = None, questRewardPool: list = None):
                 super().__init__(
                     questName, 
@@ -92,15 +92,25 @@ class plugin(opheliaPlugin):
                 self.questReward = random.choice(self.questRewardPool[min(self.questLevel - 1, len(self.questRewardPool) - 1)])
                 return True
 
-            def finishQuest(self, **kwargs):
+            def finishQuest(self, decision: str = None, **kwargs):
                 ti = kwargs["tierIncrement"]
-                decision = input(f"The reward is `{self.questReward}`. You currently have {ti} tier increment.\nClaim[1], Upgrade[2], or Pass[3]?: ").lower()
-                if decision == "2": 
+                if not decision:
+                    from functions.opheliaMouth import opheliaSpeak
+                    from functions.opheliaListens import opheliaHears
+                    p = f"The reward is `{self.questReward}`. You currently have {ti} tier increment.\nClaim, Upgrade, or Pass?"
+                    print(p)
+                    while True:
+                        heard = plugin.questManager.questHelper(self, p)
+                        if heard == "yes": break
+                if decision == "upgrade": 
                     if ti != 0: 
                         self.questReward = random.choice(self.questRewardPool[min(ti + self.questLevel -1, len(self.questRewardPool) - 1)])
                         ti = 0
-                    else: print("You have no tier increment for an upgrade. Regular reward will be given.")
-                elif decision == "3": 
+                    else: 
+                        me = "You have no tier increment for an upgrade. Regular reward will be given."
+                        print(me)
+                        opheliaSpeak(me)
+                elif decision == "pass": 
                     ti += 1
                     self.questReward = "+1 to tier increment"
                 return {"dailyCount": kwargs["dailyCount"], "tierIncrement": ti, "reward": self.questReward}
@@ -161,10 +171,10 @@ class plugin(opheliaPlugin):
                     "won": "one",
                     "on": "one",
                 }
-                try:
-                    while True:
+                while True:
+                    try:
                         if prompt is not None: opheliaSpeak(prompt)
-                        resp = opheliaHears()
+                        resp = opheliaHears(timeout= 10, timed=True)
                         if resp is None: 
                             opheliaSpeak("No response received. Please try again.")
                             continue
@@ -175,8 +185,9 @@ class plugin(opheliaPlugin):
                         opheliaSpeak(f"Is `{resp if resp is not None else 'None'}` correct?: ")
                         if opheliaHears(timeout=10, timed=True).lower() == "yes": 
                             return resp
-                except Exception as e:
-                    print(f"Error: {e}, resp: {resp}")
+                    except Exception as e:
+                        opheNeu.debug_log(f"Error: {e}, resp: {resp}")
+                        continue
         def addQuestWizard(self, questName: str=None, questType: str=None, questLevel: int = None, timeStart: datetime = None, timeEnd: datetime = None, returnQuest: bool = False, *args):
             if args: 
                 questName, questType, questLevel = (args + [None] * 3) [:3]
@@ -273,6 +284,7 @@ class plugin(opheliaPlugin):
                     # temporary quest list to be added to proper quest list
                 time.sleep(0.5)
             print(f"Refreshing Daily Quests. There are currently: {len(temporaryQuestList)} daily quests added. There are {len(self.queuedQuests)} queued quests and {len(self.expiredQuests)} expired quests.")
+            opheNeu.debug_log(f"Temporary Quest List: {[quest.questName for quest in temporaryQuestList]}\nExpired Quests: {[quest.questName for quest in self.expiredQuests]}\nQueued Quests: {[quest.questName for quest in self.queuedQuests]}")
             self.dailyQuestList = temporaryQuestList.copy()
             self.saveState()
         def timeSens(self):

@@ -60,9 +60,14 @@ def startIcon():
 # start only if icon is not none and ophelia is required
 # stop only if icon is not none and ophelia is not required
 def iconMonitoring():
-    while opheNeu.opheliaRequired: 
-        time.sleep(5)
-        opheNeu.debug_log("Icon monitoring Loop, ticking...", True)
+    killMessage = "Posture check deactivated due to posture check being deactivated"
+    try:
+        while opheNeu.isRequired(): 
+            time.sleep(5)
+            opheNeu.debug_log("Icon monitoring Loop, ticking...", deepLog=True)
+    except (NameError, AttributeError): 
+        print(killMessage)
     opheNeu.debug_log("Stopping Icon...")
-    tray_icon.visible = False
-    tray_icon.stop()
+    if tray_icon:
+        tray_icon.visible = False
+        tray_icon.stop()

@@ -16,6 +16,7 @@ discordTokens = {
     "discordToken": str(os.getenv("discordToken")),
     "logChannel": int(os.getenv("logChannel")),
     "deepLogChannel": int(os.getenv("deepLogChannel")),
+    "speakLogChannel": int(os.getenv("speakLogChannel")),
     "warningChannel": int(os.getenv("warningChannel")),
     "musicChannel": int(os.getenv("musicChannel")),
     "voiceChannel": int(os.getenv("voiceChannel")),

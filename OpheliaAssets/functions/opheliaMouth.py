@@ -40,6 +40,9 @@ def opheliaConversation(text):
     cancelThread.join()
 
 def opheliaSpeak(text, engine=opheNeu.engine, wait=True):
+    p = f"Ophelia says: {text}"
+    print(p)
+    opheNeu.debug_log(p, speakLog = True)
     if text: 
         engine.say(text=text)
         if wait: 
