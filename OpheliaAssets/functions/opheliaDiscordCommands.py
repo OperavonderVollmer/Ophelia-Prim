@@ -66,6 +66,8 @@ def runPlugin(command_name: str, mode: str = "", args: str = "", act: discord.In
 def setupCommands(tree):
     from opheliaPlugins import plugins
     
+    print("Setting up commands...")
+
     @tree.command(name="sync", description="Manually sync commands")
     async def sync(interaction: discord.Interaction):
         try:
@@ -78,12 +80,11 @@ def setupCommands(tree):
         target = plugins[key]
         command_name = target.getName().lower()
         command_desc = target.getDesc()
-        print(f"Setting up {command_name}...")
         if not target.getNeedsArgs():
             def create_command_callback(command_name):
                 async def command_callback(act: discord.Interaction):
                     await act.response.defer(ephemeral=True)
-                    res = runPlugin(command_name=command_name, act=act)
+                    runPlugin(command_name=command_name, act=act)
                 return command_callback
             tree.command(name=command_name, description=command_desc)(create_command_callback(command_name))
 
@@ -91,7 +92,7 @@ def setupCommands(tree):
             def create_command_callback(command_name):
                 async def command_callback(act: discord.Interaction, args:str = ""):
                     await act.response.defer(ephemeral=True)
-                    res = runPlugin(command_name=command_name, args=args, act=act)
+                    runPlugin(command_name=command_name, args=args, act=act)
                 return command_callback
             tree.command(name=command_name, description=command_desc)(create_command_callback(command_name))
 
@@ -99,7 +100,7 @@ def setupCommands(tree):
             def create_command_callback(command_name):
                 async def command_callback(act: discord.Interaction, mode: str, args:str = ""):
                     await act.response.defer(ephemeral=True)
-                    res = runPlugin(command_name=command_name, mode=mode, args=args, act=act)
+                    runPlugin(command_name=command_name, mode=mode, args=args, act=act)
                 return command_callback
             choices = [discord.app_commands.Choice(name=option, value=option) for option in target.getModes()]
             decorated = discord.app_commands.choices(mode=choices)(create_command_callback(command_name))

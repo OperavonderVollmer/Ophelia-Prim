@@ -5,6 +5,8 @@ import time
 import win32api
 import threading
 from queue import Queue
+import easyocr
+#from googletrans import Translator
 
 """
 
@@ -54,10 +56,20 @@ class Monitor:
 
 class Snatcher:
     """
+        Captures the screen and yields the frame as it goes
+
         Params:
             sct: The mss object for sct
             refreshRate: int = The refresh rate of the monitor
             capturer: str = Which capturer to use, only mss is supported right now. Will add Desktop Duplicator later
+
+        Methods:
+            startCapture: Starts capturing, use as list comprehension
+            stopCapture: Stops capturing
+
+        Properties:
+            fps: The fps of the capturer
+    
     """
     def __init__(self, refreshRate: int, capturer: str, sct: mss.mss = None):
         self._sct = sct if sct else None
@@ -71,7 +83,7 @@ class Snatcher:
     @property
     def fps(self): return self._fps
 
-    def trackFrames(self):
+    def __trackFrames(self):
         """
             NOT A TOOL TIP
 
@@ -99,8 +111,8 @@ class Snatcher:
         self._running = True
 
         capture_methods = {
-            "mss": self.mssCapture,
-            "dda": self.ddaCapture
+            "mss": self.__mssCapture,
+            "dda": self.__ddaCapture
         }
         try:
             chosenCapturer = capture_methods[self._capturer]
@@ -114,7 +126,7 @@ class Snatcher:
                 yield _screenshot
 
                 self._frame_counter += 1
-                self.trackFrames()
+                self.__trackFrames()
             except Exception as e:
                 print(e)
                 continue
@@ -122,16 +134,30 @@ class Snatcher:
             remaining = max (0, 1 / self._refreshRate - elapsed)
             time.sleep(remaining)
 
-    def mssCapture(self, monitor):
+    def __mssCapture(self, monitor):
         return self._sct.grab(monitor)
     
-    def ddaCapture(self, monitor):
+    def __ddaCapture(self, monitor):
         raise NotImplementedError
 
     def stopCapture(self): self._running = False            
 
 class Displayer:
-    def __init__(self, refreshRate: int, capturer: str):
+    """
+
+        Displays the captured frames
+
+        Params:
+            refreshRate: int = The refresh rate of the monitor
+
+
+        Exception:
+            ClosedStream - raised when the video stream is closed. Use to forcefully close the stream
+
+    """
+
+
+    def __init__(self, refreshRate: int):
         self._refreshRate = refreshRate
         self._running = False
         self._start_time = time.time()
@@ -140,6 +166,7 @@ class Displayer:
         self._frame_counter = 0
         self._frame_queue = Queue(maxsize=10)
         self._display_thread = None
+
 
     @property
     def fps(self): return self._fps
@@ -173,7 +200,9 @@ class Displayer:
         if not self._frame_queue.full():
             self._frame_queue.put(frame)
         else:
-            print("Frame queue is full, dropping frame")
+            self._frame_queue.get()
+            self._frame_queue.put(frame)
+            print("Display queue is full, dropping frame")
         
         if not self._display_thread or not self._display_thread.is_alive():
             self.startDisplay()
@@ -185,10 +214,7 @@ class Displayer:
                     frame = self._frame_queue.get()
                     self._frame_counter += 1
                     self.trackFrames()
-
-                    frame = np.array(frame)
-
-                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    
                     frame = self.drawFPSCounter(frame)
                     cv2.imshow("Ophelia Capture", frame)
                     cv2.resizeWindow("Ophelia Capture", 1920, 1080)
@@ -215,15 +241,58 @@ class Displayer:
         pass
 
 class Linguist:
-    def __init__(self):
+    def __init__(self, refreshRate: int):
+        self._refreshRate = refreshRate
         self._running = False
+        self._linguist_thread = None
+        self._frame_queue = Queue(maxsize=10)
+        self._reader = easyocr.Reader(['en'], recog_network="standard")
+        easyocr.utils.Image.ANTIALIAS = cv2.INTER_AREA
+
+    def readThis(self, frame):
+        if not self._running:
+            print("Please properly start the lingust")
+            return
+
+        if not self._frame_queue.full():
+            self._frame_queue.put(frame)
+        else:
+            print("Linguist queue is full, removing oldest frame")
+            self._frame_queue.get()
+            self._frame_queue.put(frame)
+        
+        if not self._linguist_thread or not self._linguist_thread.is_alive():
+            self.startLinguist()
+
+    def __linguistLoop(self):
+        while self._running:
+            if not self._frame_queue.empty():
+                frame = self._frame_queue.get()
+                text = self._reader.readtext(frame)
+
+                if text:
+                    for (bbox, text, confidence) in text:
+                        print(f"Text: {text} | Confidence: {confidence}")
+
+                time.sleep(1 / self._refreshRate)
+
+            else:
+                time.sleep(.25)
+
+    def startLinguist(self): 
+        self._running = True
+        self._linguist_thread = threading.Thread(target=self.__linguistLoop, daemon=True)
+        self._linguist_thread.start()
 
 
-    def startLinguist(self): self._running = True
     def stopLinguist(self): self._running = False
 
+class Delegator:
+    def __init__(self, refreshRate: int):
+        self._refreshRate = refreshRate
 
-class LargeMaid:
+
+class BigBrother:
     """
         Captures the screen
     """
@@ -234,7 +303,8 @@ class LargeMaid:
         self._refreshRate = refreshRate
         self._monitor = Monitor(self._sct)
         self._snatch = Snatcher(sct=self._sct, refreshRate=self._refreshRate, capturer=self._capturer)
-        self._display = Displayer(refreshRate=self._refreshRate, capturer=self._capturer)
+        self._display = Displayer(refreshRate=self._refreshRate)
+        #self._linguist = Linguist(refreshRate=self._refreshRate)
         self.lock = threading.Lock()
         self._errorCount = 0
         self._reveal = False
@@ -252,12 +322,16 @@ class LargeMaid:
         with self.lock:
             try:
                 self._display.startDisplay() if self._reveal else None
-                for frame in self._snatch.startCapture(self._monitor):
+                #self._linguist.startLinguist()
+                for frame in self._snatch.startCapture(self._monitor): 
+
+                    frame = np.array(frame)                
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    
                     if self._reveal:
                         self._display.displayThis(frame)
-
-
-
+                    
+                    #self._linguist.readThis(frame)
 
             except NotImplementedError as e:
                 self._errorCount += 1
@@ -294,6 +368,11 @@ class LargeMaid:
 
 if __name__ == "__main__":
     
-    lm = LargeMaid(24)
+    lm = BigBrother(24)
     lm.reveal = True
     lm.run()
+
+
+"""
+pip install --upgrade --force-reinstall --no-cache-dir easyocr tts opencv-python opencv-python-headless numpy scipy numba gruut protobuf markupsafe gradio proto-plus google-api-core googleapis-common-protos pip install paddleocr paddlepaddle-gpu==2.6.1.post120 -f https://www.paddlepaddle.org.cn/whl/windows/mkl/avx/stable.html
+"""

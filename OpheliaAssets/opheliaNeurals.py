@@ -63,7 +63,7 @@ postureLooping = False
 discordLoop = None
 
 def debug_log(message, deepLog=False, speakLog=False): 
-    output = f"[DEBUG]--------------------------------------------------------[DEBUG] {message}" if speakLog is not "speakLogChannel" else message
+    output = f"[DEBUG]--------------------------------------------------------[DEBUG] {message}" if speakLog != "speakLogChannel" else message
     try:
         if discordLoop is not None: discordLog(output, 
                                                "deepLogChannel" if deepLog else 

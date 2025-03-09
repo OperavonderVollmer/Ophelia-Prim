@@ -246,9 +246,13 @@ class plugin(opheliaPlugin):
                     self.persistentDaily.remove(quest)
                     return True
             return False
-        def refreshFromPersistent(self):
+        def refreshFromPersistent(self, apply = False, *args):
+            if args: apply = args[0]
             self.dailyCount = 0
             temporaryQuestList = []
+            if apply:
+                self.expiredQuests = []
+                self.queuedQuests = []
             currentTime = datetime.now().time()
             for quest in self.persistentDaily:
                 qStart = quest.timeStart.time() if quest.timeStart else None
@@ -285,7 +289,8 @@ class plugin(opheliaPlugin):
                 time.sleep(0.5)
             print(f"Refreshing Daily Quests. There are currently: {len(temporaryQuestList)} daily quests added. There are {len(self.queuedQuests)} queued quests and {len(self.expiredQuests)} expired quests.")
             opheNeu.debug_log(f"Temporary Quest List: {[quest.questName for quest in temporaryQuestList]}\nExpired Quests: {[quest.questName for quest in self.expiredQuests]}\nQueued Quests: {[quest.questName for quest in self.queuedQuests]}")
-            self.dailyQuestList = temporaryQuestList.copy()
+            if apply:
+                self.dailyQuestList = temporaryQuestList.copy()
             self.saveState()
         def timeSens(self):
             import threading as th
@@ -365,6 +370,7 @@ class plugin(opheliaPlugin):
                     Full - Gives all information
                     Short - Only gives names
                     Half - Gives names and rewards
+                    Side - Only gives expired and queued
                     r suffix returns the given list
             """
             questList = self.listQuests(isPrint=True)
@@ -375,6 +381,8 @@ class plugin(opheliaPlugin):
                 if command.startswith("r"):
                     command = command[1:]
                     returnFlag = True
+                if command == "side":
+                    return f"Expired: {', '.join([quest.QuestName for quest in self.expiredQuests])}\nQueued: {', '.join([quest.QuestName for quest in self.queuedQuests])}"
                 for quest in questList:
                     if command == "full":
                         res.append(f"Quest Name: {quest.QuestName} | Type: {quest.QuestType} | Level: {quest.QuestLevel} | Time Start: {quest.TimeStart} | Time End: {quest.TimeEnd} | Reward: {quest.QuestReward}")
@@ -383,7 +391,7 @@ class plugin(opheliaPlugin):
                     elif command == "half":
                         res.append(f"{quest.QuestName} | {quest.QuestReward}")
                     else: 
-                        return "The available types are Full, Short, and Half. Prefix r if you want the list returned"
+                        return "The available types are Full, Short, Half, and Side. Prefix r if you want the list returned"
                 if returnFlag:
                     return res
                 return ("\n").join(res)
@@ -421,7 +429,7 @@ class plugin(opheliaPlugin):
                     if lastSave < datetime.now().date(): 
                         os.remove(self.path)
                         print("Last save was on a different day. Refreshing daily quests...")
-                        self.refreshFromPersistent()
+                        self.refreshFromPersistent(apply=True)
                 params = {
                     "dailyCount": self.dailyCount,
                     "tierIncrement": self.tierIncrement,
@@ -487,6 +495,7 @@ class plugin(opheliaPlugin):
                     quest["questName"], 
                     datetime.fromisoformat(quest["timeStart"]) if quest["timeStart"] else None,
                     datetime.fromisoformat(quest["timeEnd"]) if quest["timeEnd"] else None)
+            self.refreshFromPersistent(False)
             return True
 
     def __init__(self):

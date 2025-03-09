@@ -37,3 +37,8 @@ pycaw
 discord.py[voice]
 
 mss
+cv2
+easyocr==1.6.2 
+numpy==1.22.0 
+networkx==2.8.8 
+opencv-python==4.5.5.64
