@@ -20,22 +20,24 @@ def opheliaHears(timeout=None, currRecognizer=opheNeu.recognizer, timed=False, s
     print("Listening for user input...")
 
     mic = opheNeu.sr.Microphone(device_index=2)
-    while True:
-        if timed:
-            with mic as source:
-                try:
+    try:
+        while True:
+            if timed:
+                with mic as source:
                     audio = currRecognizer.listen(source, timeout=timeout)
                     callback(currRecognizer, audio)
                     return opheliaHeard if opheliaHeard else None
-                except opheNeu.sr.WaitTimeoutError:
-                    print("Could not understand audio, didn't return anything to prevent confusion")
-        stop_listening = currRecognizer.listen_in_background(mic, callback, phrase_time_limit=timeout)
-        while not opheliaHeard and opheNeu.opheliaRequired:
-            opheNeu.time.sleep(0.05)
-            if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None
-                
-        stop_listening(wait_for_stop=False) 
-        opheNeu.debug_log(f"Heard ```{opheliaHeard}```")
-        if not stubborn: break
-        if opheliaHeard: break
-    return opheliaHeard
+            stop_listening = currRecognizer.listen_in_background(mic, callback, phrase_time_limit=timeout)
+            while not opheliaHeard and opheNeu.opheliaRequired:
+                opheNeu.time.sleep(0.05)
+                if opheNeu.cheatWord: opheliaHeard = opheNeu.cheatWord; opheNeu.cheatWord = None
+                    
+            stop_listening(wait_for_stop=False) 
+            opheNeu.debug_log(f"Heard ```{opheliaHeard}```")
+            if not stubborn: break
+            if opheliaHeard: break
+        return opheliaHeard
+    except opheNeu.sr.WaitTimeoutError:
+        print("Could not understand audio, didn't return anything to prevent confusion")
+    except AttributeError:
+        print("Most likely incorrect microphone index. Use getSoundDevices() to find correct index and ensure the microphone is connected.")

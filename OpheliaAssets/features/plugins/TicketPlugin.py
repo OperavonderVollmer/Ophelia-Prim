@@ -286,7 +286,7 @@ class plugin(opheliaPlugin):
                     temporaryQuestList.append(self.addQuest(quest, True)) 
                     print("Verdict: Temporary")
                     # temporary quest list to be added to proper quest list
-                time.sleep(0.5)
+                time.sleep(0.1)
             print(f"Refreshing Daily Quests. There are currently: {len(temporaryQuestList)} daily quests added. There are {len(self.queuedQuests)} queued quests and {len(self.expiredQuests)} expired quests.")
             opheNeu.debug_log(f"Temporary Quest List: {[quest.questName for quest in temporaryQuestList]}\nExpired Quests: {[quest.questName for quest in self.expiredQuests]}\nQueued Quests: {[quest.questName for quest in self.queuedQuests]}")
             if apply:
